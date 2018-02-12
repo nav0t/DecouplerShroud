@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 
 namespace DecouplerShroud {
-	public class ModuleDecouplerShroud : PartModule {
+	public class ModuleDecouplerShroud : PartModule, IAirstreamShield {
 
 		const int SIDES = 24;
 
@@ -17,24 +17,24 @@ namespace DecouplerShroud {
 		public bool autoDetectSize = true;
 
 		[KSPField(guiName = "Top", isPersistant = true, guiActiveEditor = true, guiActive = false)]
-		[UI_FloatEdit(scene = UI_Scene.Editor, minValue = .01f, maxValue = 10f, incrementLarge = 1.25f, incrementSlide =  0.01f, incrementSmall = 0.01f, unit = "m", sigFigs = 2, useSI = false)]
+		[UI_FloatEdit(scene = UI_Scene.Editor, minValue = .01f, maxValue = 10f, incrementLarge = .625f, incrementSlide =  0.01f, incrementSmall = 0.05f, unit = "m", sigFigs = 2, useSI = false)]
 		public float topWidth = 1.25f;
 
 		[KSPField(guiName = "Bottom", isPersistant = true, guiActiveEditor = true, guiActive = false)]
-		[UI_FloatEdit(scene = UI_Scene.Editor, minValue = .01f, maxValue = 10f, incrementLarge = 1.25f, incrementSlide = 0.01f, incrementSmall = 0.01f, unit = "m", sigFigs = 2, useSI = false)]
+		[UI_FloatEdit(scene = UI_Scene.Editor, minValue = .01f, maxValue = 10f, incrementLarge = .625f, incrementSlide = 0.01f, incrementSmall = 0.05f, unit = "m", sigFigs = 2, useSI = false)]
 		public float botWidth = 1.25f;
 
-		[KSPField(guiName = "Thickness", isPersistant = true, guiActiveEditor = true, guiActive = false), UI_FloatRange(minValue = (1 / 64f), maxValue = 1f, stepIncrement = (1 / 64f))]
+		[KSPField(guiName = "Thickness", isPersistant = true, guiActiveEditor = true, guiActive = false)]
 		[UI_FloatEdit(scene = UI_Scene.Editor, minValue = .01f, maxValue = 1f, incrementLarge = .1f, incrementSlide = 0.01f, incrementSmall = 0.01f, sigFigs = 2, useSI = false)]
 		public float thickness = .1f;
 
 		[KSPField(guiName = "Height", isPersistant = true, guiActiveEditor = true, guiActive = false)]
-		[UI_FloatEdit(scene = UI_Scene.Editor, minValue = .01f, maxValue = 10f, incrementLarge = 1.25f, incrementSlide = 0.01f, incrementSmall = 0.01f, unit = "m", sigFigs = 2, useSI = false)]
+		[UI_FloatEdit(scene = UI_Scene.Editor, minValue = .01f, maxValue = 10f, incrementLarge = 0.25f, incrementSlide = 0.01f, incrementSmall = 0.02f, unit = "m", sigFigs = 2, useSI = false)]
 		public float height = 1.25f;
 
 		[KSPField(guiName = "Vertical Offset", isPersistant = true, guiActiveEditor = true, guiActive = false)]
 		[UI_FloatEdit(scene = UI_Scene.Editor, minValue = -2f, maxValue = 2f, incrementLarge = .1f, incrementSlide = 0.01f, incrementSmall = 0.01f, unit = "m", sigFigs = 2, useSI = false)]
-		public float bottomStart = 0.0f;
+		public float vertOffset = 0.0f;
 
 		[KSPField(guiName = "Shroud Texture", isPersistant = true, guiActiveEditor = true, guiActive = false)]
 		[UI_ChooseOption(affectSymCounterparts = UI_Scene.Editor, options = new[] { "None" }, scene = UI_Scene.Editor, suppressEditorShipModified = true)]
@@ -46,9 +46,10 @@ namespace DecouplerShroud {
 		ShroudShaper shroudCylinders;
 
 		static List<SurfaceTexture> surfaceTextures;
+		DragCubeList starDragCubes;
 
 		public void setup() {
-
+			starDragCubes = part.DragCubes;
 			getTextures();
 
 			//Set up events
@@ -63,13 +64,16 @@ namespace DecouplerShroud {
 			Fields[nameof(botWidth)].OnValueModified += updateShroud;
 			Fields[nameof(height)].OnValueModified += updateShroud;
 			Fields[nameof(thickness)].OnValueModified += updateShroud;
-			Fields[nameof(bottomStart)].OnValueModified += updateShroud;
+			Fields[nameof(vertOffset)].OnValueModified += updateShroud;
 			Fields[nameof(textureIndex)].OnValueModified += updateTexture;
 
 			setButtonActive();
 
 			if (HighLogic.LoadedSceneIsFlight) {
 				createShroudGO();
+				if (getShroudedPart() != null && shroudEnabled) {
+					getShroudedPart().AddShield(this);
+				}
 			} else {
 				createShroudGO();
 			}
@@ -112,13 +116,8 @@ namespace DecouplerShroud {
 
 		//Executes when shroud is enabled/disabled
 		void activeToggled(object arg) {
-			Part topPart;
-			AttachNode topNode = part.FindAttachNode("top");
-			if (topNode.owner == (part)) {
-				topPart = topNode.attachedPart;
-			} else {
-				topPart = topNode.owner;
-			}
+			Part topPart = getShroudedPart();
+			
 			if (topPart != null) {
 				engineShroud = topPart.GetComponent<ModuleJettison>();
 				if (engineShroud != null) {
@@ -146,13 +145,13 @@ namespace DecouplerShroud {
 				Fields[nameof(topWidth)].guiActiveEditor = true;
 				Fields[nameof(botWidth)].guiActiveEditor = true;
 				Fields[nameof(height)].guiActiveEditor = true;
-				Fields[nameof(bottomStart)].guiActiveEditor = true;
+				Fields[nameof(vertOffset)].guiActiveEditor = true;
 				Fields[nameof(thickness)].guiActiveEditor = true;
 			} else {
 				Fields[nameof(topWidth)].guiActiveEditor = false;
 				Fields[nameof(botWidth)].guiActiveEditor = false;
 				Fields[nameof(height)].guiActiveEditor = false;
-				Fields[nameof(bottomStart)].guiActiveEditor = false;
+				Fields[nameof(vertOffset)].guiActiveEditor = false;
 				Fields[nameof(thickness)].guiActiveEditor = false;
 			}
 
@@ -174,6 +173,7 @@ namespace DecouplerShroud {
 			detectSize();
 			if (shroudGO == null)
 				createShroudGO();
+			
 		}
 
 		//Automatically sets size of shrouds
@@ -183,14 +183,7 @@ namespace DecouplerShroud {
 			if (!autoDetectSize || !HighLogic.LoadedSceneIsEditor) {
 				return;
 			}
-			Part topPart;
-			AttachNode topNode = part.FindAttachNode("top");
-			if (topNode.owner == (part)) {
-				topPart = topNode.attachedPart;
-			} else {
-				topPart = topNode.owner;
-			}
-
+			Part topPart = getShroudedPart();
 			//Not attached to anything
 			if (topPart != null) {
 
@@ -215,7 +208,7 @@ namespace DecouplerShroud {
 				}
 			}
 			thickness = 0.1f;
-			bottomStart = 0;
+			vertOffset = 0;
 
 			if (shroudGO != null) {
 				updateShroud();
@@ -231,6 +224,12 @@ namespace DecouplerShroud {
 			Destroy(shroudMat);
 		}
 
+		//Generates the shroud for the first time
+		void generateShroud() {
+			shroudCylinders = new ShroudShaper(24);
+			shroudCylinders.generate(vertOffset, height, botWidth, topWidth, thickness);
+		}
+
 		//updates the shroud mesh when values changed
 		void updateShroud(object arg) { updateShroud(); }
 		void updateShroud() {
@@ -240,7 +239,21 @@ namespace DecouplerShroud {
 			if (shroudGO == null || shroudCylinders == null) {
 				createShroudGO();
 			}
-			shroudCylinders.update(bottomStart, height, botWidth, topWidth, thickness);
+			shroudCylinders.update(vertOffset, height, botWidth, topWidth, thickness);
+		}
+
+		//Recalculates the drag cubes for the model
+		void generateDragCube() {
+
+			if (shroudEnabled && HighLogic.LoadedSceneIsFlight) {
+				//Calculate dragcube for the cone manually
+				DragCube dc = DragCubeSystem.Instance.RenderProceduralDragCube(part);
+				part.DragCubes.ClearCubes();
+				part.DragCubes.Cubes.Add(dc);
+				part.DragCubes.ResetCubeWeights();
+
+			}
+
 		}
 
 		//Create the gameObject with the meshrenderer
@@ -251,8 +264,7 @@ namespace DecouplerShroud {
 
 			AttachNode topNode = part.FindAttachNode("top");
 
-			shroudCylinders = new ShroudShaper(24);
-			shroudCylinders.generate(bottomStart, height, botWidth, topWidth, thickness);
+			generateShroud();
 
 			if (shroudGO != null) {
 				Destroy(shroudGO);
@@ -270,6 +282,7 @@ namespace DecouplerShroud {
 			shroudMat = CreateMat();
 			shroudGO.AddComponent<MeshRenderer>();
 			shroudGO.GetComponent<Renderer>().material = shroudMat;
+			generateDragCube();
 		}
 
 		//Creates the material for the mesh
@@ -284,5 +297,25 @@ namespace DecouplerShroud {
 			return mat;
 		}
 
+		Part getShroudedPart() {
+			AttachNode topNode = part.FindAttachNode("top");
+			if (topNode.owner == (part)) {
+				return topNode.attachedPart;
+			} else {
+				return topNode.owner;
+			}
+		}
+
+		public bool ClosedAndLocked() {
+			return shroudEnabled;
+		}
+
+		public Vessel GetVessel() {
+			return vessel;
+		}
+
+		public Part GetPart() {
+			return part;
+		}
 	}
 }

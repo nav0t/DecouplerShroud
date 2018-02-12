@@ -28,6 +28,7 @@ namespace DecouplerShroud {
 
 		public void update(float bottomStart, float height, float botWidth, float topWidth, float thickness) {
 			float maxWidth = (topWidth > botWidth)? topWidth : botWidth;
+			float widthDiff = (topWidth > botWidth) ? topWidth - botWidth : botWidth - topWidth;
 			Cylinder c0 = multiCylinder.cylinders[0];
 			Cylinder c1 = multiCylinder.cylinders[1];
 			Cylinder c2 = multiCylinder.cylinders[2];
@@ -37,12 +38,12 @@ namespace DecouplerShroud {
 			c0.height = height;
 			c0.botWidth = botWidth;
 			c0.topWidth = topWidth;
-			c0.uvBot = 0;
-			c0.uvTop = 2*height / (6*maxWidth);
-			if (c0.uvTop > 240 / 512f) {
-				c0.uvTop = 240 / 512f;
-			}
 			c0.tiling = 2;
+			c0.uvBot = 0;
+			c0.uvTop = (height) / (6*maxWidth / c0.tiling);
+			if (c0.uvTop > 240 / 512f) {
+			}
+			c0.uvTop = 240 / 512f;
 			
 			//Sets top bit values
 			c1.bottomStart = bottomStart+height;
