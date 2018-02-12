@@ -15,19 +15,19 @@ namespace DecouplerShroud {
 			this.multiCylinder = new MultiCylinder(sides, 3);
 		}
 
-		public ShroudShaper(int sides, float bottomStart, float height, float botRad, float topRad) {
+		public ShroudShaper(int sides, float bottomStart, float height, float botWidth, float topWidth) {
 
 			this.sides = sides;
 			this.multiCylinder = new MultiCylinder(sides, 3);
 		}
 		
-		public void generate(float bottomStart, float height, float botRad, float topRad, float width) {
+		public void generate(float bottomStart, float height, float botWidth, float topWidth, float thickness) {
 			multiCylinder.GenerateCylinders();
-			update(bottomStart, height, botRad, topRad, width);
+			update(bottomStart, height, botWidth, topWidth, thickness);
 		}
 
-		public void update(float bottomStart, float height, float botRad, float topRad, float width) {
-			float maxRad = (topRad > botRad)? topRad : botRad;
+		public void update(float bottomStart, float height, float botWidth, float topWidth, float thickness) {
+			float maxWidth = (topWidth > botWidth)? topWidth : botWidth;
 			Cylinder c0 = multiCylinder.cylinders[0];
 			Cylinder c1 = multiCylinder.cylinders[1];
 			Cylinder c2 = multiCylinder.cylinders[2];
@@ -35,10 +35,10 @@ namespace DecouplerShroud {
 			//Sets outer shell values
 			c0.bottomStart = bottomStart;
 			c0.height = height;
-			c0.botRad = botRad;
-			c0.topRad = topRad;
+			c0.botWidth = botWidth;
+			c0.topWidth = topWidth;
 			c0.uvBot = 0;
-			c0.uvTop = 2*height / (6*maxRad);
+			c0.uvTop = 2*height / (6*maxWidth);
 			if (c0.uvTop > 240 / 512f) {
 				c0.uvTop = 240 / 512f;
 			}
@@ -47,17 +47,17 @@ namespace DecouplerShroud {
 			//Sets top bit values
 			c1.bottomStart = bottomStart+height;
 			c1.height = 0;
-			c1.botRad = topRad;
-			c1.topRad = topRad - width * topRad;
+			c1.botWidth = topWidth;
+			c1.topWidth = topWidth - thickness * topWidth;
 			c1.uvBot = (241 / 512f);
 			c1.uvTop = ((512-241) / 512f);
-			c1.tiling = ((int)(6*(30 / 512f) / (width * topRad) * (6 * topRad))) / 6f;
+			c1.tiling = ((int)(6*(30 / 512f) / (thickness * topWidth) * (6 * topWidth))) / 6f;
 
 			//Sets inner shell values
 			c2.bottomStart = bottomStart + height;
 			c2.height = -height;
-			c2.botRad = topRad - width * topRad;
-			c2.topRad = botRad - width * topRad;
+			c2.botWidth = topWidth - thickness * topWidth;
+			c2.topWidth = botWidth - thickness * topWidth;
 			c2.uvBot = ((512 - 240) / 512f);
 			c2.uvTop = 1;
 

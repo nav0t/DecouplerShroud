@@ -10,8 +10,8 @@ namespace DecouplerShroud {
 
 		public float bottomStart = 0;
 		public float height = 1;
-		public float botRad = 1.25f;
-		public float topRad = 1.25f;
+		public float botWidth = 1.25f;
+		public float topWidth = 1.25f;
 		public float uvBot = 0;
 		public float uvTop = 1;
 		public int sides = 24;
@@ -20,11 +20,11 @@ namespace DecouplerShroud {
 		public Cylinder(int sides) {
 			this.sides = sides;
 		}
-		public Cylinder(int sides, float bottomStart, float height, float botRad, float topRad, float uvBot, float uvTop) {
+		public Cylinder(int sides, float bottomStart, float height, float botWidth, float topWidth, float uvBot, float uvTop) {
 			this.bottomStart = bottomStart;
 			this.height = height;
-			this.botRad = botRad;
-			this.topRad = topRad;
+			this.botWidth = botWidth;
+			this.topWidth = topWidth;
 			this.uvBot = uvBot;
 			this.uvTop = uvTop;
 			this.sides = sides;
@@ -38,14 +38,14 @@ namespace DecouplerShroud {
 
 			for (int i = 0; i < res; i++) {
 				float ang = i / (float)(sides) * 2 * Mathf.PI;
-				Vector3 pos = new Vector3(Mathf.Cos(ang), 0, Mathf.Sin(ang));
+				Vector3 pos = new Vector3(Mathf.Cos(ang), 0, Mathf.Sin(ang)) / 2;
 				Vector3 tan = (new Vector3(-Mathf.Sin(ang), 0, Mathf.Cos(ang))).normalized;
-				Vector3 tanv = Vector3.up * height - pos * (botRad - topRad);
+				Vector3 tanv = Vector3.up * height - pos * (botWidth - topWidth);
 
 				Vector3 nor = -Vector3.Cross(tan, tanv).normalized;
 
-				verts[vertOffset + 2 * i + 0] = pos * botRad + Vector3.up * bottomStart;
-				verts[vertOffset + 2 * i + 1] = pos * topRad + Vector3.up * (height + bottomStart);
+				verts[vertOffset + 2 * i + 0] = pos * botWidth + Vector3.up * bottomStart;
+				verts[vertOffset + 2 * i + 1] = pos * topWidth + Vector3.up * (height + bottomStart);
 
 				nors[vertOffset + 2 * i + 0] = nor;
 				nors[vertOffset + 2 * i + 1] = nor;
@@ -69,14 +69,14 @@ namespace DecouplerShroud {
 
 			for (int i = 0; i < res; i++) {
 				float ang = i / (float)(sides) * 2 * Mathf.PI;
-				Vector3 pos = new Vector3(Mathf.Cos(ang), 0, Mathf.Sin(ang));
+				Vector3 pos = new Vector3(Mathf.Cos(ang), 0, Mathf.Sin(ang)) / 2;
 				Vector3 tan = (new Vector3(-Mathf.Sin(ang), 0, Mathf.Cos(ang))).normalized;
-				Vector3 tanv = Vector3.up * height - pos * (botRad - topRad);
+				Vector3 tanv = Vector3.up * height - pos * (botWidth - topWidth);
 
 				Vector3 nor = -Vector3.Cross(tan, tanv).normalized;
 
-				verts[vertOffset + 2 * i + 0] = pos * botRad + Vector3.up * bottomStart;
-				verts[vertOffset + 2 * i + 1] = pos * topRad + Vector3.up * (height + bottomStart);
+				verts[vertOffset + 2 * i + 0] = pos * botWidth + Vector3.up * bottomStart;
+				verts[vertOffset + 2 * i + 1] = pos * topWidth + Vector3.up * (height + bottomStart);
 
 				nors[vertOffset + 2 * i + 0] = nor;
 				nors[vertOffset + 2 * i + 1] = nor;

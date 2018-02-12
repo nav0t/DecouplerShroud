@@ -16,15 +16,24 @@ namespace DecouplerShroud {
 		[KSPField(guiName = "Automatic Shroud Size", isPersistant = true, guiActiveEditor = true, guiActive = false), UI_Toggle(invertButton = true)]
 		public bool autoDetectSize = true;
 
-		[KSPField(guiName = "Top Radius", isPersistant = true, guiActiveEditor = true, guiActive = false), UI_FloatRange(minValue = .125f, maxValue = 7f, stepIncrement = 0.125f)]
-		public float topRad = 1.25f;
-		[KSPField(guiName = "Bottom Radius", isPersistant = true, guiActiveEditor = true, guiActive = false), UI_FloatRange(minValue = .125f, maxValue = 7f, stepIncrement = 0.125f)]
-		public float botRad = 1.25f;
-		[KSPField(guiName = "Shroud Thickness", isPersistant = true, guiActiveEditor = true, guiActive = false), UI_FloatRange(minValue = (1 / 64f), maxValue = 1f, stepIncrement = (1 / 64f))]
-		public float width = .1f;
-		[KSPField(guiName = "Shroud Height", isPersistant = true, guiActiveEditor = true, guiActive = false), UI_FloatRange(minValue = .125f, maxValue = 7f, stepIncrement = 0.125f)]
+		[KSPField(guiName = "Top", isPersistant = true, guiActiveEditor = true, guiActive = false)]
+		[UI_FloatEdit(scene = UI_Scene.Editor, minValue = .01f, maxValue = 10f, incrementLarge = 1.25f, incrementSlide =  0.01f, incrementSmall = 0.01f, unit = "m", sigFigs = 2, useSI = false)]
+		public float topWidth = 1.25f;
+
+		[KSPField(guiName = "Bottom", isPersistant = true, guiActiveEditor = true, guiActive = false)]
+		[UI_FloatEdit(scene = UI_Scene.Editor, minValue = .01f, maxValue = 10f, incrementLarge = 1.25f, incrementSlide = 0.01f, incrementSmall = 0.01f, unit = "m", sigFigs = 2, useSI = false)]
+		public float botWidth = 1.25f;
+
+		[KSPField(guiName = "Thickness", isPersistant = true, guiActiveEditor = true, guiActive = false), UI_FloatRange(minValue = (1 / 64f), maxValue = 1f, stepIncrement = (1 / 64f))]
+		[UI_FloatEdit(scene = UI_Scene.Editor, minValue = .01f, maxValue = 1f, incrementLarge = .1f, incrementSlide = 0.01f, incrementSmall = 0.01f, sigFigs = 2, useSI = false)]
+		public float thickness = .1f;
+
+		[KSPField(guiName = "Height", isPersistant = true, guiActiveEditor = true, guiActive = false)]
+		[UI_FloatEdit(scene = UI_Scene.Editor, minValue = .01f, maxValue = 10f, incrementLarge = 1.25f, incrementSlide = 0.01f, incrementSmall = 0.01f, unit = "m", sigFigs = 2, useSI = false)]
 		public float height = 1.25f;
-		[KSPField(guiName = "Vertical Offset", isPersistant = true, guiActiveEditor = true, guiActive = false), UI_FloatRange(minValue = -1f, maxValue = 1f, stepIncrement = 0.125f)]
+
+		[KSPField(guiName = "Vertical Offset", isPersistant = true, guiActiveEditor = true, guiActive = false)]
+		[UI_FloatEdit(scene = UI_Scene.Editor, minValue = -2f, maxValue = 2f, incrementLarge = .1f, incrementSlide = 0.01f, incrementSmall = 0.01f, unit = "m", sigFigs = 2, useSI = false)]
 		public float bottomStart = 0.0f;
 
 		[KSPField(guiName = "Shroud Texture", isPersistant = true, guiActiveEditor = true, guiActive = false)]
@@ -50,10 +59,10 @@ namespace DecouplerShroud {
 			Fields[nameof(autoDetectSize)].OnValueModified += setButtonActive;
 			Fields[nameof(autoDetectSize)].OnValueModified += detectSize;
 
-			Fields[nameof(topRad)].OnValueModified += updateShroud;
-			Fields[nameof(botRad)].OnValueModified += updateShroud;
+			Fields[nameof(topWidth)].OnValueModified += updateShroud;
+			Fields[nameof(botWidth)].OnValueModified += updateShroud;
 			Fields[nameof(height)].OnValueModified += updateShroud;
-			Fields[nameof(width)].OnValueModified += updateShroud;
+			Fields[nameof(thickness)].OnValueModified += updateShroud;
 			Fields[nameof(bottomStart)].OnValueModified += updateShroud;
 			Fields[nameof(textureIndex)].OnValueModified += updateTexture;
 
@@ -64,6 +73,7 @@ namespace DecouplerShroud {
 			} else {
 				createShroudGO();
 			}
+			detectSize();
 		}
 
 
@@ -71,6 +81,7 @@ namespace DecouplerShroud {
 			setup();
 		}
 
+		//Gets textures from Textures folder and loads them into surfaceTextures list + set Field options
 		void getTextures() {
 			if (surfaceTextures == null) {
 				List<GameDatabase.TextureInfo> textures = GameDatabase.Instance.GetAllTexturesInFolder("DecouplerShroud/Textures/");
@@ -94,7 +105,7 @@ namespace DecouplerShroud {
 				options[i] = surfaceTextures[i].name;
 			}
 
-			BaseField textureField = Fields["textureIndex"];
+			BaseField textureField = Fields[nameof(textureIndex)];
 			UI_ChooseOption textureOptions = (UI_ChooseOption)textureField.uiControlEditor;
 			textureOptions.options = options;
 		}
@@ -132,17 +143,17 @@ namespace DecouplerShroud {
 
 			}
 			if (shroudEnabled && !autoDetectSize) {
-				Fields[nameof(topRad)].guiActiveEditor = true;
-				Fields[nameof(botRad)].guiActiveEditor = true;
+				Fields[nameof(topWidth)].guiActiveEditor = true;
+				Fields[nameof(botWidth)].guiActiveEditor = true;
 				Fields[nameof(height)].guiActiveEditor = true;
 				Fields[nameof(bottomStart)].guiActiveEditor = true;
-				Fields[nameof(width)].guiActiveEditor = true;
+				Fields[nameof(thickness)].guiActiveEditor = true;
 			} else {
-				Fields[nameof(topRad)].guiActiveEditor = false;
-				Fields[nameof(botRad)].guiActiveEditor = false;
+				Fields[nameof(topWidth)].guiActiveEditor = false;
+				Fields[nameof(botWidth)].guiActiveEditor = false;
 				Fields[nameof(height)].guiActiveEditor = false;
 				Fields[nameof(bottomStart)].guiActiveEditor = false;
-				Fields[nameof(width)].guiActiveEditor = false;
+				Fields[nameof(thickness)].guiActiveEditor = false;
 			}
 
 		}
@@ -196,14 +207,15 @@ namespace DecouplerShroud {
 
 				if (tippytopPart != null) {
 					if (tippytopPart.collider != null) {
-						topRad = tippytopPart.collider.bounds.size.x / 2f;
+						topWidth = tippytopPart.collider.bounds.size.x;
 					}
 				}
 				if (part.collider != null) {
-					botRad = part.collider.bounds.size.x / 2f;
+					botWidth = part.collider.bounds.size.x;
 				}
 			}
-			width = 0.1f;
+			thickness = 0.1f;
+			bottomStart = 0;
 
 			if (shroudGO != null) {
 				updateShroud();
@@ -228,9 +240,8 @@ namespace DecouplerShroud {
 			if (shroudGO == null || shroudCylinders == null) {
 				createShroudGO();
 			}
-			shroudCylinders.update(bottomStart, height, botRad, topRad, width);
+			shroudCylinders.update(bottomStart, height, botWidth, topWidth, thickness);
 		}
-
 
 		//Create the gameObject with the meshrenderer
 		void createShroudGO() {
@@ -241,7 +252,7 @@ namespace DecouplerShroud {
 			AttachNode topNode = part.FindAttachNode("top");
 
 			shroudCylinders = new ShroudShaper(24);
-			shroudCylinders.generate(bottomStart, height, botRad, topRad, width);
+			shroudCylinders.generate(bottomStart, height, botWidth, topWidth, thickness);
 
 			if (shroudGO != null) {
 				Destroy(shroudGO);
