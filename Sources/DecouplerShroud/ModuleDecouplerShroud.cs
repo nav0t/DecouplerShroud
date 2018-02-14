@@ -8,6 +8,8 @@ using UnityEngine;
 namespace DecouplerShroud {
 	public class ModuleDecouplerShroud : PartModule, IAirstreamShield {
 
+		float[] snapSizes = new float[] { .625f , 1.25f, 2.5f, 3.75f, 5f, 7.5f};
+
 		[KSPField(isPersistant = true)]
 		public int nSides = 24;
 
@@ -18,11 +20,11 @@ namespace DecouplerShroud {
 		public bool autoDetectSize = true;
 
 		[KSPField(guiName = "Top", isPersistant = true, guiActiveEditor = true, guiActive = false)]
-		[UI_FloatEdit(scene = UI_Scene.Editor, minValue = .01f, maxValue = 10f, incrementLarge = .625f, incrementSlide =  0.01f, incrementSmall = 0.05f, unit = "m", sigFigs = 2, useSI = false)]
+		[UI_FloatEdit(scene = UI_Scene.Editor, minValue = .01f, maxValue = 20f, incrementLarge = .625f, incrementSlide =  0.01f, incrementSmall = 0.05f, unit = "m", sigFigs = 2, useSI = false)]
 		public float topWidth = 1.25f;
 
 		[KSPField(guiName = "Bottom", isPersistant = true, guiActiveEditor = true, guiActive = false)]
-		[UI_FloatEdit(scene = UI_Scene.Editor, minValue = .01f, maxValue = 10f, incrementLarge = .625f, incrementSlide = 0.01f, incrementSmall = 0.05f, unit = "m", sigFigs = 2, useSI = false)]
+		[UI_FloatEdit(scene = UI_Scene.Editor, minValue = .01f, maxValue = 20f, incrementLarge = .625f, incrementSlide = 0.01f, incrementSmall = 0.05f, unit = "m", sigFigs = 2, useSI = false)]
 		public float botWidth = 1.25f;
 
 		[KSPField(guiName = "Thickness", isPersistant = true, guiActiveEditor = true, guiActive = false)]
@@ -30,7 +32,7 @@ namespace DecouplerShroud {
 		public float thickness = .1f;
 
 		[KSPField(guiName = "Height", isPersistant = true, guiActiveEditor = true, guiActive = false)]
-		[UI_FloatEdit(scene = UI_Scene.Editor, minValue = .01f, maxValue = 10f, incrementLarge = 0.25f, incrementSlide = 0.01f, incrementSmall = 0.02f, unit = "m", sigFigs = 2, useSI = false)]
+		[UI_FloatEdit(scene = UI_Scene.Editor, minValue = .01f, maxValue = 20f, incrementLarge = 0.25f, incrementSlide = 0.01f, incrementSmall = 0.02f, unit = "m", sigFigs = 2, useSI = false)]
 		public float height = 1.25f;
 
 		[KSPField(guiName = "Vertical Offset", isPersistant = true, guiActiveEditor = true, guiActive = false)]
@@ -41,13 +43,14 @@ namespace DecouplerShroud {
 		[UI_ChooseOption(affectSymCounterparts = UI_Scene.Editor, options = new[] { "None" }, scene = UI_Scene.Editor, suppressEditorShipModified = true)]
 		public int textureIndex;
 
-		[KSPField(isPersistant = true)]
+		[KSPField(isPersistant = false)]
 		public float defaultBotWidth = 0;
-		[KSPField(isPersistant = true)]
+		[KSPField(isPersistant = false)]
 		public float defaultVertOffset = 0;
-		[KSPField(isPersistant = true)]
+		[KSPField(isPersistant = false)]
 		public float defaultThickness = 0.1f;
-
+		[KSPField(isPersistant = false)]
+		public float radialSnapMargin = .15f;
 
 		ModuleJettison engineShroud;
 		GameObject shroudGO;
@@ -232,6 +235,7 @@ namespace DecouplerShroud {
 				//Calculate top Width
 				if (shroudAttatchedPart.collider != null) {
 					topWidth = shroudAttatchedPart.collider.bounds.size.x;
+					topWidth = TrySnapToSize(topWidth, radialSnapMargin);
 				}
 
 				//============================
@@ -251,7 +255,7 @@ namespace DecouplerShroud {
 				Vector3 bottomAttachPos = part.FindAttachNode("top").position + Vector3.up * defaultVertOffset;
 
 				Vector3 differenceVector = nodeRelativePos - bottomAttachPos;
-				Debug.Log("Difference Vector: "+ differenceVector);
+				//Debug.Log("Difference Vector: "+ differenceVector);
 
 				//Set height of shroud to vertical difference between top and bottom node
 				height = differenceVector.y;
@@ -259,10 +263,13 @@ namespace DecouplerShroud {
 
 			if (part.collider != null) {
 				botWidth = part.collider.bounds.size.x;
+				botWidth = TrySnapToSize(botWidth, radialSnapMargin);
 			}
 
 			thickness = defaultThickness;
 			vertOffset = defaultVertOffset;
+			Debug.Log("Defaults: " + defaultBotWidth + ", " + defaultVertOffset);
+
 			if (defaultBotWidth != 0) {
 				botWidth = defaultBotWidth;
 			}
@@ -271,6 +278,17 @@ namespace DecouplerShroud {
 			if (shroudGO != null) {
 				updateShroud();
 			}
+		}
+
+		public float TrySnapToSize(float size, float margin) {
+			
+			foreach (float snap in snapSizes) {
+				if (Math.Abs(snap - size) < margin * size) {
+					return snap;
+				}
+			}
+
+			return size;
 		}
 
 		void partDetached() {
