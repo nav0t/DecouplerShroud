@@ -102,8 +102,22 @@ namespace DecouplerShroud {
 					lastPos = transform.position;
 					detectSize();
 				}
-
 			}
+
+			//DEBUG!!
+			//if (Input.GetKeyDown(KeyCode.P)) {
+			//	printPartPresetsToConsole();
+			//}
+
+		}
+
+		void printPartPresetsToConsole() {
+			Debug.Log("@PART["+part.name+"]{");
+			Debug.Log("\t@MODULE[ModuleDecouplerShroud]{");
+			Debug.Log("\t\t%defaultBotWidth = " + botWidth);
+			Debug.Log("\t\t%defaultVertOffset = " + vertOffset);
+			Debug.Log("\t}");
+			Debug.Log("}");
 		}
 
 		//Gets textures from Textures folder and loads them into surfaceTextures list + set Field options
