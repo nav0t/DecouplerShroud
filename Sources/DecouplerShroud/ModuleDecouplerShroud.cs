@@ -8,7 +8,8 @@ using UnityEngine;
 namespace DecouplerShroud {
 	public class ModuleDecouplerShroud : PartModule, IAirstreamShield {
 
-		const int SIDES = 24;
+		[KSPField(isPersistant = true)]
+		public int nSides = 24;
 
 		[KSPField(guiName = "DecouplerShroud", isPersistant = true, guiActiveEditor = true, guiActive = false), UI_Toggle(invertButton = true)]
 		public bool shroudEnabled = false;
@@ -39,6 +40,14 @@ namespace DecouplerShroud {
 		[KSPField(guiName = "Shroud Texture", isPersistant = true, guiActiveEditor = true, guiActive = false)]
 		[UI_ChooseOption(affectSymCounterparts = UI_Scene.Editor, options = new[] { "None" }, scene = UI_Scene.Editor, suppressEditorShipModified = true)]
 		public int textureIndex;
+
+		[KSPField(isPersistant = true)]
+		public float defaultBotWidth = 0;
+		[KSPField(isPersistant = true)]
+		public float defaultVertOffset = 0;
+		[KSPField(isPersistant = true)]
+		public float defaultThickness = 0.1f;
+
 
 		ModuleJettison engineShroud;
 		GameObject shroudGO;
@@ -75,11 +84,12 @@ namespace DecouplerShroud {
 					getShroudedPart().AddShield(this);
 				}
 			} else {
-				createShroudGO();
+				if (part.isAttached) {
+					createShroudGO();
+				}
 			}
 			detectSize();
 		}
-
 
 		public void Start() {
 			setup();
@@ -102,6 +112,10 @@ namespace DecouplerShroud {
 						Debug.Log("No Normal map found: " + inf.name + "_Normals");
 					}
 				}
+			}
+
+			if (textureIndex >= surfaceTextures.Count) {
+				textureIndex = 0;
 			}
 
 			string[] options = new string[surfaceTextures.Count];
@@ -207,8 +221,13 @@ namespace DecouplerShroud {
 					botWidth = part.collider.bounds.size.x;
 				}
 			}
-			thickness = 0.1f;
-			vertOffset = 0;
+			thickness = defaultThickness;
+
+			if (defaultBotWidth != 0) {
+				botWidth = defaultBotWidth;
+			}
+			vertOffset = defaultVertOffset;
+			Debug.Log("defaults: "+defaultBotWidth+", "+defaultVertOffset);
 
 			if (shroudGO != null) {
 				updateShroud();
@@ -226,7 +245,7 @@ namespace DecouplerShroud {
 
 		//Generates the shroud for the first time
 		void generateShroud() {
-			shroudCylinders = new ShroudShaper(24);
+			shroudCylinders = new ShroudShaper(nSides);
 			shroudCylinders.generate(vertOffset, height, botWidth, topWidth, thickness);
 		}
 
