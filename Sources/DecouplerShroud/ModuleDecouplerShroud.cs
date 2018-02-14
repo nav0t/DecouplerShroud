@@ -53,6 +53,7 @@ namespace DecouplerShroud {
 		GameObject shroudGO;
 		Material shroudMat;
 		ShroudShaper shroudCylinders;
+		Vector3 lastPos;
 
 		static List<SurfaceTexture> surfaceTextures;
 		DragCubeList starDragCubes;
@@ -80,8 +81,8 @@ namespace DecouplerShroud {
 
 			if (HighLogic.LoadedSceneIsFlight) {
 				createShroudGO();
-				if (getShroudedPart() != null && shroudEnabled) {
-					getShroudedPart().AddShield(this);
+				if (GetShroudedPart() != null && shroudEnabled) {
+					GetShroudedPart().AddShield(this);
 				}
 			} else {
 				if (part.isAttached) {
@@ -93,6 +94,16 @@ namespace DecouplerShroud {
 
 		public void Start() {
 			setup();
+		}
+
+		void Update() {
+			if (HighLogic.LoadedSceneIsEditor) {
+				if (transform.position != lastPos) {
+					lastPos = transform.position;
+					detectSize();
+				}
+
+			}
 		}
 
 		//Gets textures from Textures folder and loads them into surfaceTextures list + set Field options
@@ -130,7 +141,7 @@ namespace DecouplerShroud {
 
 		//Executes when shroud is enabled/disabled
 		void activeToggled(object arg) {
-			Part topPart = getShroudedPart();
+			Part topPart = GetShroudedPart();
 			
 			if (topPart != null) {
 				engineShroud = topPart.GetComponent<ModuleJettison>();
@@ -194,41 +205,55 @@ namespace DecouplerShroud {
 		void detectSize(object arg) { detectSize(); }
 		void detectSize() {
 
+			//Check if the size has to be reset
 			if (!autoDetectSize || !HighLogic.LoadedSceneIsEditor) {
 				return;
 			}
-			Part topPart = getShroudedPart();
-			//Not attached to anything
-			if (topPart != null) {
+			
+			//Get part the shroud is attached to
+			Part shroudAttatchedPart = GetShroudAttachPart();
 
-				AttachNode tippytopNode = topPart.FindAttachNode("top");
-				AttachNode tippybotNode = topPart.FindAttachNode("bottom");
 
-				if (tippybotNode != null && tippytopNode != null)
-					height = Mathf.Abs(tippytopNode.position.y - tippybotNode.position.y);
-
-				Part tippytopPart = tippytopNode.owner;
-				if (tippytopPart = topPart) {
-					tippytopPart = tippytopNode.attachedPart;
+			if (shroudAttatchedPart != null) {
+				//Calculate top Width
+				if (shroudAttatchedPart.collider != null) {
+					topWidth = shroudAttatchedPart.collider.bounds.size.x;
 				}
 
-				if (tippytopPart != null) {
-					if (tippytopPart.collider != null) {
-						topWidth = tippytopPart.collider.bounds.size.x;
-					}
-				}
-				if (part.collider != null) {
-					botWidth = part.collider.bounds.size.x;
-				}
+				//============================
+				//==== Calculate Height ======
+				//============================
+
+				//Get the world position of the node we want to attach to
+				AttachNode targetNode = shroudAttatchedPart.FindAttachNodeByPart(GetShroudedPart());
+
+				//Bring the node position to world space
+				Vector3 nodeWorldPos = shroudAttatchedPart.transform.TransformPoint(targetNode.position);
+
+				//Get local position of nodeWorldPos
+				Vector3 nodeRelativePos = transform.InverseTransformPoint(nodeWorldPos);
+
+				//Calculate position of decoupler side
+				Vector3 bottomAttachPos = part.FindAttachNode("top").position + Vector3.up * defaultVertOffset;
+
+				Vector3 differenceVector = nodeRelativePos - bottomAttachPos;
+				Debug.Log("Difference Vector: "+ differenceVector);
+
+				//Set height of shroud to vertical difference between top and bottom node
+				height = differenceVector.y;
 			}
-			thickness = defaultThickness;
 
+			if (part.collider != null) {
+				botWidth = part.collider.bounds.size.x;
+			}
+
+			thickness = defaultThickness;
+			vertOffset = defaultVertOffset;
 			if (defaultBotWidth != 0) {
 				botWidth = defaultBotWidth;
 			}
-			vertOffset = defaultVertOffset;
-			Debug.Log("defaults: "+defaultBotWidth+", "+defaultVertOffset);
 
+			//Update shroud mesh
 			if (shroudGO != null) {
 				updateShroud();
 			}
@@ -316,13 +341,37 @@ namespace DecouplerShroud {
 			return mat;
 		}
 
-		Part getShroudedPart() {
+		Part GetShroudedPart() {
 			AttachNode topNode = part.FindAttachNode("top");
 			if (topNode.owner == (part)) {
 				return topNode.attachedPart;
 			} else {
 				return topNode.owner;
 			}
+		}
+
+		Part GetShroudAttachPart() {
+			Part shroudedPart = GetShroudedPart();
+			if (shroudedPart == null) {
+				return null;
+			}
+
+			AttachNode shroudedTopNode = shroudedPart.FindAttachNode("top");
+			AttachNode shroudedBotNode = shroudedPart.FindAttachNode("bottom");
+
+			Part shroudAttatchPart = shroudedTopNode.owner;
+
+			if (shroudAttatchPart == shroudedPart) {
+				shroudAttatchPart = shroudedTopNode.attachedPart;
+			}
+			if (shroudAttatchPart == part) {
+				shroudAttatchPart = shroudedBotNode.owner;
+				if (shroudAttatchPart == shroudedPart) {
+					shroudAttatchPart = shroudedBotNode.attachedPart;
+				}
+			}
+			return shroudAttatchPart;
+
 		}
 
 		public bool ClosedAndLocked() {
