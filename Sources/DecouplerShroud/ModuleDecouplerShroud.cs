@@ -58,12 +58,11 @@ namespace DecouplerShroud {
 		ShroudShaper shroudCylinders;
 		Vector3 lastPos;
 
-		static List<SurfaceTexture> surfaceTextures;
 		DragCubeList starDragCubes;
 
 		public void setup() {
 			starDragCubes = part.DragCubes;
-			getTextures();
+			getTextureNames();
 
 			//Set up events
 			part.OnEditorAttach += partReattached;
@@ -124,31 +123,18 @@ namespace DecouplerShroud {
 		}
 
 		//Gets textures from Textures folder and loads them into surfaceTextures list + set Field options
-		void getTextures() {
-			if (surfaceTextures == null) {
-				List<GameDatabase.TextureInfo> textures = GameDatabase.Instance.GetAllTexturesInFolder("DecouplerShroud/Textures/");
-				surfaceTextures = new List<SurfaceTexture>();
-				foreach (GameDatabase.TextureInfo inf in textures) {
-					string name = inf.name.Replace("DecouplerShroud/Textures/", "");
-					if (inf.name.EndsWith("_Normals")) {
-						continue;
-					}
-					Texture tex = inf.texture;
-					Texture nor = GameDatabase.Instance.GetTexture(inf.name + "_Normals", false);
-					surfaceTextures.Add(new SurfaceTexture(name, tex, nor));
-					if (nor == null) {
-						Debug.Log("No Normal map found: " + inf.name + "_Normals");
-					}
-				}
+		void getTextureNames() {
+			if (ShroudTexture.surfaceTextures == null) {
+				ShroudTexture.LoadTextures();
 			}
 
-			if (textureIndex >= surfaceTextures.Count) {
+			if (textureIndex >= ShroudTexture.surfaceTextures.Count) {
 				textureIndex = 0;
 			}
 
-			string[] options = new string[surfaceTextures.Count];
+			string[] options = new string[ShroudTexture.surfaceTextures.Count];
 			for (int i = 0; i < options.Length; i++) {
-				options[i] = surfaceTextures[i].name;
+				options[i] = ShroudTexture.surfaceTextures[i].name;
 			}
 
 			BaseField textureField = Fields[nameof(textureIndex)];
@@ -208,8 +194,8 @@ namespace DecouplerShroud {
 			if (shroudMat != shroudGO.GetComponent<Renderer>().sharedMaterial) {
 				shroudMat = shroudGO.GetComponent<Renderer>().sharedMaterial;
 			}
-			shroudMat.SetTexture("_MainTex", surfaceTextures[textureIndex].texture);
-			shroudMat.SetTexture("_BumpMap", surfaceTextures[textureIndex].normalMap);
+			shroudMat.SetTexture("_MainTex", ShroudTexture.surfaceTextures[textureIndex].texture);
+			shroudMat.SetTexture("_BumpMap", ShroudTexture.surfaceTextures[textureIndex].normalMap);
 		}
 
 		void partReattached() {
@@ -366,8 +352,8 @@ namespace DecouplerShroud {
 		Material CreateMat() {
 			Material mat = new Material(Shader.Find("KSP/Bumped Specular"));
 
-			mat.SetTexture("_MainTex", surfaceTextures[textureIndex].texture);
-			mat.SetTexture("_BumpMap", surfaceTextures[textureIndex].normalMap);
+			mat.SetTexture("_MainTex", ShroudTexture.surfaceTextures[textureIndex].texture);
+			mat.SetTexture("_BumpMap", ShroudTexture.surfaceTextures[textureIndex].normalMap);
 
 			mat.SetFloat("_Shininess", .07f);
 			mat.SetColor("_SpecColor", Color.white * (95 / 255f));
@@ -376,6 +362,10 @@ namespace DecouplerShroud {
 
 		Part GetShroudedPart() {
 			AttachNode topNode = part.FindAttachNode("top");
+			if (topNode == null) {
+				Debug.LogError("Decoupler is missing top node!");
+				return null;
+			}
 			if (topNode.owner == (part)) {
 				return topNode.attachedPart;
 			} else {
@@ -392,17 +382,24 @@ namespace DecouplerShroud {
 			AttachNode shroudedTopNode = shroudedPart.FindAttachNode("top");
 			AttachNode shroudedBotNode = shroudedPart.FindAttachNode("bottom");
 
-			Part shroudAttatchPart = shroudedTopNode.owner;
-
-			if (shroudAttatchPart == shroudedPart) {
-				shroudAttatchPart = shroudedTopNode.attachedPart;
-			}
-			if (shroudAttatchPart == part) {
-				shroudAttatchPart = shroudedBotNode.owner;
-				if (shroudAttatchPart == shroudedPart) {
-					shroudAttatchPart = shroudedBotNode.attachedPart;
+			Part shroudAttatchPart = null;
+			if (shroudedTopNode != null) {
+				if (shroudedTopNode.owner == shroudedPart) {
+					shroudAttatchPart = shroudedTopNode.attachedPart;
+				} else {
+					shroudAttatchPart = shroudedTopNode.owner;
 				}
 			}
+			if (shroudedBotNode != null) {
+				if (shroudAttatchPart == part || shroudAttatchPart == null) {
+					shroudAttatchPart = shroudedBotNode.owner;
+					if (shroudAttatchPart == shroudedPart) {
+						shroudAttatchPart = shroudedBotNode.attachedPart;
+					}
+				}
+			}
+
+			
 			return shroudAttatchPart;
 
 		}
