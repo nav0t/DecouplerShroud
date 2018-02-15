@@ -167,6 +167,7 @@ namespace DecouplerShroud {
 				}
 			}
 			setButtonActive();
+			detectSize();
 			updateShroud();
 		}
 
@@ -234,7 +235,7 @@ namespace DecouplerShroud {
 			if (shroudAttatchedPart != null) {
 				//Calculate top Width
 				if (shroudAttatchedPart.collider != null) {
-					topWidth = shroudAttatchedPart.collider.bounds.size.x;
+					topWidth = shroudAttatchedPart.collider.bounds.size.x * shroudAttatchedPart.transform.localScale.x;
 					topWidth = TrySnapToSize(topWidth, radialSnapMargin);
 				}
 
@@ -262,7 +263,7 @@ namespace DecouplerShroud {
 			}
 
 			if (part.collider != null) {
-				botWidth = part.collider.bounds.size.x;
+				botWidth = part.collider.bounds.size.x * part.transform.localScale.x;
 				botWidth = TrySnapToSize(botWidth, radialSnapMargin);
 			}
 
