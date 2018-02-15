@@ -257,7 +257,7 @@ namespace DecouplerShroud {
 
 			thickness = defaultThickness;
 			vertOffset = defaultVertOffset;
-			Debug.Log("Defaults: " + defaultBotWidth + ", " + defaultVertOffset);
+			//Debug.Log("Defaults: " + defaultBotWidth + ", " + defaultVertOffset);
 
 			if (defaultBotWidth != 0) {
 				botWidth = defaultBotWidth;

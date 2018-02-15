@@ -43,18 +43,18 @@ namespace DecouplerShroud {
 			Cylinder c3 = multiCylinder.cylinders[3]; //bottom tucked in edge
 
 			//Creates bottom edge
-			c3.bottomStart = vertOffset;
+			c3.bottomStart = vertOffset - bottomEdgeSize;
 			c3.height = bottomEdgeSize;
-			c3.botWidth = botWidth;
-			c3.topWidth = botWidth + bottomEdgeSize;
+			c3.botWidth = botWidth - bottomEdgeSize;
+			c3.topWidth = botWidth;
 			c3.tiling = 2;
 			c3.uvBot = 0;
 			c3.uvTop = .1f;
 
 			//Sets outer shell values
-			c0.bottomStart = vertOffset + bottomEdgeSize;
-			c0.height = height - bottomEdgeSize;
-			c0.botWidth = botWidth + bottomEdgeSize;
+			c0.bottomStart = vertOffset;
+			c0.height = height;
+			c0.botWidth = botWidth;
 			c0.topWidth = topWidth;
 			c0.tiling = 2;
 			c0.uvBot = 0.1f;
