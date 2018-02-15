@@ -53,6 +53,8 @@ namespace DecouplerShroud {
 		public float radialSnapMargin = .15f;
 		[KSPField(isPersistant = false)]
 		public float bottomEdgeSize = .1f;
+		[KSPField(isPersistant = false)]
+		public float topBevelSize = .05f;
 
 		ModuleJettison engineShroud;
 		GameObject shroudGO;

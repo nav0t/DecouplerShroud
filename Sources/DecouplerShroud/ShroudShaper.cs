@@ -10,12 +10,12 @@ namespace DecouplerShroud {
 		public int sides;
 		public MultiCylinder multiCylinder;
 		ModuleDecouplerShroud decouplerShroud;
-		float vertOffset, height, botWidth, topWidth, thickness, bottomEdgeSize;
+		float vertOffset, height, botWidth, topWidth, thickness, bottomEdgeSize, topBevelSize;
 
 		public ShroudShaper(ModuleDecouplerShroud decouplerShroud, int sides) {
 			this.sides = sides;
 			this.decouplerShroud = decouplerShroud;
-			this.multiCylinder = new MultiCylinder(sides, 4);
+			this.multiCylinder = new MultiCylinder(sides, 5);
 		}
 		
 		void getDecouplerShroudValues() {
@@ -25,6 +25,8 @@ namespace DecouplerShroud {
 			this.topWidth = decouplerShroud.topWidth;
 			this.thickness = decouplerShroud.thickness;
 			this.bottomEdgeSize = decouplerShroud.bottomEdgeSize;
+			this.topBevelSize = decouplerShroud.topBevelSize;
+
 		}
 
 		public void generate() {
@@ -41,6 +43,7 @@ namespace DecouplerShroud {
 			Cylinder c1 = multiCylinder.cylinders[1]; //top flat bit
 			Cylinder c2 = multiCylinder.cylinders[2]; //inside
 			Cylinder c3 = multiCylinder.cylinders[3]; //bottom tucked in edge
+			Cylinder c4 = multiCylinder.cylinders[4]; //top bevel in edge
 
 			//Creates bottom edge
 			c3.bottomStart = vertOffset - bottomEdgeSize;
@@ -53,21 +56,30 @@ namespace DecouplerShroud {
 
 			//Sets outer shell values
 			c0.bottomStart = vertOffset;
-			c0.height = height;
+			c0.height = height - topBevelSize;
 			c0.botWidth = botWidth;
 			c0.topWidth = topWidth;
 			c0.tiling = 2;
 			c0.uvBot = 0.1f;
+			c0.uvTop = 240 / 512f - .1f;
 			//c0.uvTop = (height) / (6*maxWidth / c0.tiling);
 			//if (c0.uvTop > 240 / 512f) {
 			//}
-			c0.uvTop = 240 / 512f;
-			
+
+			//Set top Bevel 
+			c4.bottomStart = vertOffset + height - topBevelSize;
+			c4.height = topBevelSize;
+			c4.botWidth = topWidth;
+			c4.topWidth = topWidth - topBevelSize;
+			c4.tiling = 2;
+			c4.uvBot = 240 / 512f - .1f;
+			c4.uvTop = 240 / 512f;
+
 			//Sets top bit values
 			c1.bottomStart = vertOffset+height;
 			c1.height = 0;
-			c1.botWidth = topWidth;
-			c1.topWidth = topWidth - thickness * topWidth;
+			c1.botWidth = topWidth - topBevelSize;
+			c1.topWidth = (topWidth - topBevelSize) - thickness * topWidth;
 			c1.uvBot = (241 / 512f);
 			c1.uvTop = ((512-241) / 512f);
 			c1.tiling = ((int)(6*(30 / 512f) / (thickness * topWidth) * (6 * topWidth))) / 6f;
