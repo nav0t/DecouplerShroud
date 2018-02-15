@@ -51,6 +51,8 @@ namespace DecouplerShroud {
 		public float defaultThickness = 0.1f;
 		[KSPField(isPersistant = false)]
 		public float radialSnapMargin = .15f;
+		[KSPField(isPersistant = false)]
+		public float bottomEdgeSize = .1f;
 
 		ModuleJettison engineShroud;
 		GameObject shroudGO;
@@ -289,8 +291,8 @@ namespace DecouplerShroud {
 
 		//Generates the shroud for the first time
 		void generateShroud() {
-			shroudCylinders = new ShroudShaper(nSides);
-			shroudCylinders.generate(vertOffset, height, botWidth, topWidth, thickness);
+			shroudCylinders = new ShroudShaper(this, nSides);
+			shroudCylinders.generate();
 		}
 
 		//updates the shroud mesh when values changed
@@ -302,7 +304,7 @@ namespace DecouplerShroud {
 			if (shroudGO == null || shroudCylinders == null) {
 				createShroudGO();
 			}
-			shroudCylinders.update(vertOffset, height, botWidth, topWidth, thickness);
+			shroudCylinders.update();
 		}
 
 		//Recalculates the drag cubes for the model
