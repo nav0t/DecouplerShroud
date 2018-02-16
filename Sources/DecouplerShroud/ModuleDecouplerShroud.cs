@@ -219,7 +219,21 @@ namespace DecouplerShroud {
 			if (!autoDetectSize || !HighLogic.LoadedSceneIsEditor || !part.isAttached) {
 				return;
 			}
-			
+
+
+			thickness = defaultThickness;
+			vertOffset = defaultVertOffset;
+			//Debug.Log("Defaults: " + defaultBotWidth + ", " + defaultVertOffset);
+
+			if (defaultBotWidth != 0) {
+				botWidth = defaultBotWidth;
+			} else {
+				if (part.collider != null) {
+					botWidth = part.collider.bounds.size.x * part.transform.localScale.x;
+					botWidth = TrySnapToSize(botWidth, radialSnapMargin);
+				}
+			}
+
 			//Get part the shroud is attached to
 			Part shroudAttatchedPart = GetShroudAttachPart();
 
@@ -255,19 +269,7 @@ namespace DecouplerShroud {
 			} else {
 				//Debug.LogError("Decoupler has no grandparent");
 				height = 0;
-			}
-
-			if (part.collider != null) {
-				botWidth = part.collider.bounds.size.x * part.transform.localScale.x;
-				botWidth = TrySnapToSize(botWidth, radialSnapMargin);
-			}
-
-			thickness = defaultThickness;
-			vertOffset = defaultVertOffset;
-			//Debug.Log("Defaults: " + defaultBotWidth + ", " + defaultVertOffset);
-
-			if (defaultBotWidth != 0) {
-				botWidth = defaultBotWidth;
+				topWidth = botWidth;
 			}
 
 			//Update shroud mesh

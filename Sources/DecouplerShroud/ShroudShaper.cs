@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace DecouplerShroud {
 	class ShroudShaper {
@@ -49,6 +50,9 @@ namespace DecouplerShroud {
 			Cylinder c3 = multiCylinder.cylinders[3]; //bottom tucked in edge
 			Cylinder c4 = multiCylinder.cylinders[4]; //top bevel in edge
 
+			Vector2 bevel = new Vector2((botWidth - topWidth), height).normalized + Vector2.right;
+			bevel = bevel.normalized * topBevelSize;
+
 			//Creates bottom edge
 			c3.bottomStart = vertOffset - bottomEdgeSize;
 			c3.height = bottomEdgeSize;
@@ -60,7 +64,7 @@ namespace DecouplerShroud {
 
 			//Sets outer shell values
 			c0.bottomStart = vertOffset;
-			c0.height = height - topBevelSize;
+			c0.height = height - bevel.y;
 			c0.botWidth = botWidth;
 			c0.topWidth = topWidth;
 			c0.tiling = 2;
@@ -71,10 +75,10 @@ namespace DecouplerShroud {
 			//}
 
 			//Set top Bevel 
-			c4.bottomStart = vertOffset + height - topBevelSize;
-			c4.height = topBevelSize;
+			c4.bottomStart = vertOffset + height - bevel.y;
+			c4.height = bevel.y;
 			c4.botWidth = topWidth;
-			c4.topWidth = topWidth - topBevelSize;
+			c4.topWidth = topWidth - bevel.x;
 			c4.tiling = 2;
 			c4.uvBot = 240 / 512f - .1f;
 			c4.uvTop = 240 / 512f;
@@ -82,8 +86,8 @@ namespace DecouplerShroud {
 			//Sets top bit values
 			c1.bottomStart = vertOffset+height;
 			c1.height = 0;
-			c1.botWidth = topWidth - topBevelSize;
-			c1.topWidth = (topWidth - topBevelSize) - thickness * topWidth;
+			c1.botWidth = topWidth - bevel.x;
+			c1.topWidth = (topWidth - bevel.x) - thickness * topWidth;
 			c1.uvBot = (241 / 512f);
 			c1.uvTop = ((512-241) / 512f);
 			c1.tiling = ((int)(6*(30 / 512f) / (thickness * topWidth) * (6 * topWidth))) / 6f;
