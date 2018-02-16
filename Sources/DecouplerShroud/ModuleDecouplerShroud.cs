@@ -8,7 +8,7 @@ using UnityEngine;
 namespace DecouplerShroud {
 	public class ModuleDecouplerShroud : PartModule, IAirstreamShield {
 
-		float[] snapSizes = new float[] { .625f , 1.25f, 2.5f, 3.75f, 5f, 7.5f};
+		float[] snapSizes = new float[] { .63f , 1.25f, 2.5f, 3.75f, 5f, 7.5f};
 
 		[KSPField(isPersistant = true)]
 		public int nSides = 24;
