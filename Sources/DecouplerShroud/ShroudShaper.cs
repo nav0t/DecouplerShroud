@@ -10,7 +10,7 @@ namespace DecouplerShroud {
 		public int sides;
 		public MultiCylinder multiCylinder;
 		ModuleDecouplerShroud decouplerShroud;
-		float vertOffset, height, botWidth, topWidth, thickness, bottomEdgeSize, topBevelSize;
+		float vertOffset, height, botWidth, topWidth, thickness, bottomEdgeSize, topBevelSize, antiZFightSizeIncrease;
 
 		public ShroudShaper(ModuleDecouplerShroud decouplerShroud, int sides) {
 			this.sides = sides;
@@ -26,6 +26,7 @@ namespace DecouplerShroud {
 			this.thickness = decouplerShroud.thickness;
 			this.bottomEdgeSize = decouplerShroud.bottomEdgeSize;
 			this.topBevelSize = decouplerShroud.topBevelSize;
+			this.antiZFightSizeIncrease = decouplerShroud.antiZFightSizeIncrease;
 
 		}
 
@@ -36,6 +37,9 @@ namespace DecouplerShroud {
 
 		public void update() {
 			getDecouplerShroudValues();
+
+			topWidth += antiZFightSizeIncrease;
+			botWidth += antiZFightSizeIncrease;
 
 			float maxWidth = (topWidth > botWidth)? topWidth : botWidth;
 			float widthDiff = (topWidth > botWidth) ? topWidth - botWidth : botWidth - topWidth;
@@ -91,6 +95,10 @@ namespace DecouplerShroud {
 			c2.topWidth = botWidth - thickness * topWidth;
 			c2.uvBot = ((512 - 240) / 512f);
 			c2.uvTop = 1;
+
+
+			topWidth -= antiZFightSizeIncrease;
+			botWidth -= antiZFightSizeIncrease;
 
 			//Updates mesh
 			multiCylinder.UpdateCylinders();

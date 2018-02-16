@@ -55,6 +55,8 @@ namespace DecouplerShroud {
 		public float bottomEdgeSize = .1f;
 		[KSPField(isPersistant = false)]
 		public float topBevelSize = .05f;
+		[KSPField(isPersistant = false)]
+		public float antiZFightSizeIncrease = .001f;
 
 		ModuleJettison engineShroud;
 		GameObject shroudGO;
@@ -104,7 +106,7 @@ namespace DecouplerShroud {
 
 		void Update() {
 			if (HighLogic.LoadedSceneIsEditor) {
-				if (transform.position != lastPos) {
+				if (transform.position != lastPos && part.isAttached && shroudEnabled) {
 					lastPos = transform.position;
 					detectSize();
 				}
@@ -214,7 +216,7 @@ namespace DecouplerShroud {
 		void detectSize() {
 
 			//Check if the size has to be reset
-			if (!autoDetectSize || !HighLogic.LoadedSceneIsEditor) {
+			if (!autoDetectSize || !HighLogic.LoadedSceneIsEditor || !part.isAttached) {
 				return;
 			}
 			
@@ -250,6 +252,9 @@ namespace DecouplerShroud {
 
 				//Set height of shroud to vertical difference between top and bottom node
 				height = differenceVector.y;
+			} else {
+				//Debug.LogError("Decoupler has no grandparent");
+				height = 0;
 			}
 
 			if (part.collider != null) {
@@ -400,6 +405,9 @@ namespace DecouplerShroud {
 					if (shroudAttatchPart == shroudedPart) {
 						shroudAttatchPart = shroudedBotNode.attachedPart;
 					}
+				}
+				if (shroudAttatchPart == part) {
+					shroudAttatchPart = null;
 				}
 			}
 
