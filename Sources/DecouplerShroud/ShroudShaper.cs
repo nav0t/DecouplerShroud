@@ -60,7 +60,7 @@ namespace DecouplerShroud {
 			c3.topWidth = botWidth;
 			c3.tiling = 2;
 			c3.uvBot = 0;
-			c3.uvTop = .1f;
+			c3.uvTop = .01f;
 
 			//Sets outer shell values
 			c0.bottomStart = vertOffset;
@@ -68,8 +68,8 @@ namespace DecouplerShroud {
 			c0.botWidth = botWidth;
 			c0.topWidth = topWidth;
 			c0.tiling = 2;
-			c0.uvBot = 0.1f;
-			c0.uvTop = 240 / 512f - .1f;
+			c0.uvBot = 0.01f;
+			c0.uvTop = 240 / 512f - .01f;
 			//c0.uvTop = (height) / (6*maxWidth / c0.tiling);
 			//if (c0.uvTop > 240 / 512f) {
 			//}
@@ -80,7 +80,7 @@ namespace DecouplerShroud {
 			c4.botWidth = topWidth;
 			c4.topWidth = topWidth - bevel.x;
 			c4.tiling = 2;
-			c4.uvBot = 240 / 512f - .1f;
+			c4.uvBot = 240 / 512f - .01f;
 			c4.uvTop = 240 / 512f;
 
 			//Sets top bit values

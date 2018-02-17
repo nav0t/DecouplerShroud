@@ -62,7 +62,13 @@ namespace DecouplerShroud {
 		GameObject shroudGO;
 		Material shroudMat;
 		ShroudShaper shroudCylinders;
+
+		//Variables for detecting wheter automatic size needs to be recalculated
 		Vector3 lastPos;
+		Vector3 lastScale;
+		Vector3 lastShroudAttachedPos;
+		Vector3 lastShroudAttachedScale;
+		Part lastShroudAttachedPart;
 
 		DragCubeList starDragCubes;
 
@@ -106,9 +112,36 @@ namespace DecouplerShroud {
 
 		void Update() {
 			if (HighLogic.LoadedSceneIsEditor) {
-				if (transform.position != lastPos && part.isAttached && shroudEnabled) {
-					lastPos = transform.position;
-					detectSize();
+
+				if (part.isAttached && shroudEnabled) {
+					//Checking if part position/scale changed
+					if (transform.position != lastPos || transform.localScale != lastScale) 
+					{
+						lastPos = transform.position;
+						lastScale = transform.localScale;
+						detectSize();
+					}
+					//If there is a new attached part
+					if (GetShroudAttachedPart() != lastShroudAttachedPart) {
+						lastShroudAttachedPart = GetShroudAttachedPart();
+						//Also setting new sizes, so it doesn't recalculate twice, if next if cond detects change
+						if (lastShroudAttachedPart != null) {
+							lastShroudAttachedPos = lastShroudAttachedPart.transform.position;
+							lastShroudAttachedScale = lastShroudAttachedPart.transform.localScale;
+						}
+						detectSize();
+					}
+					//Check if attached part changed
+					if (lastShroudAttachedPart != null) {
+						if(lastShroudAttachedPos != lastShroudAttachedPart.transform.position
+						|| lastShroudAttachedScale != lastShroudAttachedPart.transform.localScale) 
+						{
+							lastShroudAttachedPos = lastShroudAttachedPart.transform.position;
+							lastShroudAttachedScale = lastShroudAttachedPart.transform.localScale;
+							detectSize();
+						}
+					}
+
 				}
 			}
 
@@ -119,14 +152,14 @@ namespace DecouplerShroud {
 
 		}
 
-		void printPartPresetsToConsole() {
-			Debug.Log("@PART["+part.name+"]{");
-			Debug.Log("\t@MODULE[ModuleDecouplerShroud]{");
-			Debug.Log("\t\t%defaultBotWidth = " + botWidth);
-			Debug.Log("\t\t%defaultVertOffset = " + vertOffset);
-			Debug.Log("\t}");
-			Debug.Log("}");
-		}
+		//void printPartPresetsToConsole() {
+		//	Debug.Log("@PART["+part.name+"]{");
+		//	Debug.Log("\t@MODULE[ModuleDecouplerShroud]{");
+		//	Debug.Log("\t\t%defaultBotWidth = " + botWidth);
+		//	Debug.Log("\t\t%defaultVertOffset = " + vertOffset);
+		//	Debug.Log("\t}");
+		//	Debug.Log("}");
+		//}
 
 		//Gets textures from Textures folder and loads them into surfaceTextures list + set Field options
 		void getTextureNames() {
@@ -235,8 +268,7 @@ namespace DecouplerShroud {
 			}
 
 			//Get part the shroud is attached to
-			Part shroudAttatchedPart = GetShroudAttachPart();
-
+			Part shroudAttatchedPart = GetShroudAttachedPart();
 
 			if (shroudAttatchedPart != null) {
 				//Calculate top Width
@@ -384,7 +416,7 @@ namespace DecouplerShroud {
 			}
 		}
 
-		Part GetShroudAttachPart() {
+		Part GetShroudAttachedPart() {
 			Part shroudedPart = GetShroudedPart();
 			if (shroudedPart == null) {
 				return null;
