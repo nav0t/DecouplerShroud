@@ -66,8 +66,10 @@ namespace DecouplerShroud {
 		//Variables for detecting wheter automatic size needs to be recalculated
 		Vector3 lastPos;
 		Vector3 lastScale;
+		Vector3 lastBounds;
 		Vector3 lastShroudAttachedPos;
 		Vector3 lastShroudAttachedScale;
+		Vector3 lastShroudAttachedBounds;
 		Part lastShroudAttachedPart;
 
 		DragCubeList starDragCubes;
@@ -112,54 +114,57 @@ namespace DecouplerShroud {
 
 		void Update() {
 			if (HighLogic.LoadedSceneIsEditor) {
-
 				if (part.isAttached && shroudEnabled) {
-					//Checking if part position/scale changed
-					if (transform.position != lastPos || transform.localScale != lastScale) 
-					{
-						lastPos = transform.position;
-						lastScale = transform.localScale;
-						detectSize();
-					}
-					//If there is a new attached part
-					if (GetShroudAttachedPart() != lastShroudAttachedPart) {
-						lastShroudAttachedPart = GetShroudAttachedPart();
-						//Also setting new sizes, so it doesn't recalculate twice, if next if cond detects change
-						if (lastShroudAttachedPart != null) {
-							lastShroudAttachedPos = lastShroudAttachedPart.transform.position;
-							lastShroudAttachedScale = lastShroudAttachedPart.transform.localScale;
-						}
-						detectSize();
-					}
-					//Check if attached part changed
-					if (lastShroudAttachedPart != null) {
-						if(lastShroudAttachedPos != lastShroudAttachedPart.transform.position
-						|| lastShroudAttachedScale != lastShroudAttachedPart.transform.localScale) 
-						{
-							lastShroudAttachedPos = lastShroudAttachedPart.transform.position;
-							lastShroudAttachedScale = lastShroudAttachedPart.transform.localScale;
-							detectSize();
-						}
-					}
-
+					detectRequiredRecalculation();
 				}
 			}
 
-			//DEBUG!!
-			//if (Input.GetKeyDown(KeyCode.P)) {
-			//	printPartPresetsToConsole();
-			//}
-
 		}
 
-		//void printPartPresetsToConsole() {
-		//	Debug.Log("@PART["+part.name+"]{");
-		//	Debug.Log("\t@MODULE[ModuleDecouplerShroud]{");
-		//	Debug.Log("\t\t%defaultBotWidth = " + botWidth);
-		//	Debug.Log("\t\t%defaultVertOffset = " + vertOffset);
-		//	Debug.Log("\t}");
-		//	Debug.Log("}");
-		//}
+		void detectRequiredRecalculation() {
+			bool requiredRecalc = false;
+
+			//Check if collider bounds changed (for example procedural parts can cause this)
+			if (part.collider != null) {
+				if (lastBounds != part.collider.bounds.size) {
+					lastBounds = part.collider.bounds.size;
+					requiredRecalc = true;
+				}
+			}
+			
+			//Checking if part position/scale changed
+			if (transform.position != lastPos || transform.localScale != lastScale) {
+				lastPos = transform.position;
+				lastScale = transform.localScale;
+				requiredRecalc = true;
+			}
+			//If there is a new attached part
+			if (GetShroudAttachedPart() != lastShroudAttachedPart) {
+				lastShroudAttachedPart = GetShroudAttachedPart();
+				requiredRecalc = true;
+			}
+			//Check if attached part changed
+			if (lastShroudAttachedPart != null) {
+				if (lastShroudAttachedPos != lastShroudAttachedPart.transform.position
+				|| lastShroudAttachedScale != lastShroudAttachedPart.transform.localScale) {
+					lastShroudAttachedPos = lastShroudAttachedPart.transform.position;
+					lastShroudAttachedScale = lastShroudAttachedPart.transform.localScale;
+					requiredRecalc = true;
+				}
+				//Check if collider bounds of attatched part changed (for example procedural parts can cause this)
+				if (lastShroudAttachedPart.collider != null) {
+					if (lastShroudAttachedBounds != lastShroudAttachedPart.collider.bounds.size) {
+						lastShroudAttachedBounds = lastShroudAttachedPart.collider.bounds.size;
+						requiredRecalc = true;
+					}
+				}
+			}
+
+			if (requiredRecalc) {
+				detectSize();
+			}
+
+		}
 
 		//Gets textures from Textures folder and loads them into surfaceTextures list + set Field options
 		void getTextureNames() {
@@ -228,8 +233,8 @@ namespace DecouplerShroud {
 		void updateTexture(object arg) { updateTexture(); }
 		void updateTexture() {
 
-			Debug.Log("Setting Texture to " + textureIndex);
-			Debug.Log("eq: " + (shroudMat == shroudGO.GetComponent<Renderer>().sharedMaterial));
+			//Debug.Log("Setting Texture to " + textureIndex);
+			//Debug.Log("eq: " + (shroudMat == shroudGO.GetComponent<Renderer>().sharedMaterial));
 			if (shroudMat != shroudGO.GetComponent<Renderer>().sharedMaterial) {
 				shroudMat = shroudGO.GetComponent<Renderer>().sharedMaterial;
 			}
