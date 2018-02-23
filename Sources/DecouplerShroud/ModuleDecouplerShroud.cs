@@ -62,6 +62,7 @@ namespace DecouplerShroud {
 		GameObject shroudGO;
 		Material shroudMat;
 		ShroudShaper shroudCylinders;
+		bool turnedOffEngineShroud;
 
 		//Variables for detecting wheter automatic size needs to be recalculated
 		Vector3 lastPos;
@@ -77,6 +78,13 @@ namespace DecouplerShroud {
 		public void setup() {
 			starDragCubes = part.DragCubes;
 			getTextureNames();
+
+			//Remove copied decoupler shroud when copied
+			Transform copiedDecouplerShroud = transform.FindChild("DecouplerShroud");
+			if (copiedDecouplerShroud != null) {
+				Destroy(copiedDecouplerShroud.gameObject);
+				shroudCylinders = null;
+			}
 
 			//Set up events
 			part.OnEditorAttach += partReattached;
@@ -193,7 +201,14 @@ namespace DecouplerShroud {
 			if (topPart != null) {
 				engineShroud = topPart.GetComponent<ModuleJettison>();
 				if (engineShroud != null) {
-					engineShroud.shroudHideOverride = shroudEnabled;
+					if (shroudEnabled) {
+						turnedOffEngineShroud = engineShroud.shroudHideOverride;
+						engineShroud.shroudHideOverride = true;
+
+					} else {
+						engineShroud.shroudHideOverride = turnedOffEngineShroud;
+
+					}
 				}
 			}
 			setButtonActive();
@@ -267,8 +282,29 @@ namespace DecouplerShroud {
 				botWidth = defaultBotWidth;
 			} else {
 				if (part.collider != null) {
-					botWidth = part.collider.bounds.size.x * part.transform.localScale.x;
-					botWidth = TrySnapToSize(botWidth, radialSnapMargin);
+					//botWidth = part.collider.bounds.size.x * part.transform.localScale.x;
+					//botWidth = TrySnapToSize(botWidth, radialSnapMargin);
+					MeshCollider mc = (MeshCollider)part.collider;
+
+					if (mc != null) {
+						//mc.sharedMesh.RecalculateBounds();
+						botWidth = mc.sharedMesh.bounds.size.x * part.transform.localScale.x;
+
+						//Scale width with scale of parent transforms
+						Transform parentTransform = mc.transform;
+						while (parentTransform != part.transform && parentTransform != null) {
+							botWidth *= parentTransform.localScale.x;
+							parentTransform = parentTransform.parent;
+						}
+
+						botWidth = TrySnapToSize(botWidth, radialSnapMargin);
+						//Debug.Log("MeshSize: " + mc.sharedMesh.bounds.size.x + ", Scale: " + shroudAttatchedPart.transform.localScale.x+ ", MeshGO Scale" + mc.transform.localScale.x);
+					} else {
+						botWidth = part.collider.bounds.size.x * part.transform.localScale.x;
+						botWidth = TrySnapToSize(botWidth, radialSnapMargin);
+						//Debug.Log("Size: " + shroudAttatchedPart.collider.bounds.size.x + ", " + shroudAttatchedPart.transform.localScale.x);
+					}
+
 				}
 			}
 
@@ -278,8 +314,29 @@ namespace DecouplerShroud {
 			if (shroudAttatchedPart != null) {
 				//Calculate top Width
 				if (shroudAttatchedPart.collider != null) {
-					topWidth = shroudAttatchedPart.collider.bounds.size.x * shroudAttatchedPart.transform.localScale.x;
-					topWidth = TrySnapToSize(topWidth, radialSnapMargin);
+
+					//Check if meshCollider
+					MeshCollider mc = (MeshCollider)shroudAttatchedPart.collider;
+
+					if (mc != null) {
+						//mc.sharedMesh.RecalculateBounds();
+						topWidth = mc.sharedMesh.bounds.size.x * shroudAttatchedPart.transform.localScale.x;
+
+						//Scale width with scale of parent transforms
+						Transform parentTransform = mc.transform;
+						while (parentTransform != shroudAttatchedPart.transform && parentTransform != null) {
+							topWidth *= parentTransform.localScale.x;
+							parentTransform = parentTransform.parent;
+						}
+
+						topWidth = TrySnapToSize(topWidth, radialSnapMargin);
+						//Debug.Log("MeshSize: " + mc.sharedMesh.bounds.size.x + ", Scale: " + shroudAttatchedPart.transform.localScale.x+ ", MeshGO Scale" + mc.transform.localScale.x);
+					} else {
+						topWidth = shroudAttatchedPart.collider.bounds.size.x * shroudAttatchedPart.transform.localScale.x;
+						topWidth = TrySnapToSize(topWidth, radialSnapMargin);
+						//Debug.Log("Size: " + shroudAttatchedPart.collider.bounds.size.x + ", " + shroudAttatchedPart.transform.localScale.x);
+					}
+					
 				}
 
 				//============================
@@ -328,6 +385,9 @@ namespace DecouplerShroud {
 
 		void partDetached() {
 			destroyShroud();
+			if (engineShroud != null) {
+				engineShroud.shroudHideOverride = turnedOffEngineShroud;
+			}
 		}
 
 		void destroyShroud() {
