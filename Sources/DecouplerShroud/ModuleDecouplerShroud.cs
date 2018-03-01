@@ -58,6 +58,7 @@ namespace DecouplerShroud {
 		[KSPField(isPersistant = false)]
 		public float antiZFightSizeIncrease = .001f;
 
+		bool setupFinished = false;
 		ModuleJettison engineShroud;
 		GameObject shroudGO;
 		Material shroudMat;
@@ -76,6 +77,12 @@ namespace DecouplerShroud {
 		DragCubeList starDragCubes;
 
 		public void setup() {
+
+			//Get rid of decoupler shroud module if no top node found
+			if (destroyShroudIfNoTopNode()) {
+				return;
+			}
+
 			starDragCubes = part.DragCubes;
 			getTextureNames();
 
@@ -114,6 +121,7 @@ namespace DecouplerShroud {
 				}
 			}
 			detectSize();
+			setupFinished = true;
 		}
 
 		public void Start() {
@@ -121,6 +129,10 @@ namespace DecouplerShroud {
 		}
 
 		void Update() {
+			if (!setupFinished) {
+				return;
+			}
+
 			if (HighLogic.LoadedSceneIsEditor) {
 				if (part.isAttached && shroudEnabled) {
 					detectRequiredRecalculation();
@@ -476,6 +488,18 @@ namespace DecouplerShroud {
 			mat.SetFloat("_Shininess", .07f);
 			mat.SetColor("_SpecColor", Color.white * (95 / 255f));
 			return mat;
+		}
+
+		bool destroyShroudIfNoTopNode() {
+			AttachNode topNode = part.FindAttachNode("top");
+			if (topNode == null) {
+				Debug.LogError("Decoupler is missing top node!");
+				Debug.LogError("Removing Decouplershroud from part: "+part.name);
+				part.RemoveModule(this);
+				Destroy(this);
+				return true;
+			}
+			return false;
 		}
 
 		Part GetShroudedPart() {
