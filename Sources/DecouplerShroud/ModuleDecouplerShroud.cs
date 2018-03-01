@@ -269,7 +269,7 @@ namespace DecouplerShroud {
 		void detectSize() {
 
 			//Check if the size has to be reset
-			if (!autoDetectSize || !HighLogic.LoadedSceneIsEditor || !part.isAttached) {
+			if (!autoDetectSize || !HighLogic.LoadedSceneIsEditor || !part.isAttached || !shroudEnabled) {
 				return;
 			}
 
@@ -284,7 +284,12 @@ namespace DecouplerShroud {
 				if (part.collider != null) {
 					//botWidth = part.collider.bounds.size.x * part.transform.localScale.x;
 					//botWidth = TrySnapToSize(botWidth, radialSnapMargin);
-					MeshCollider mc = (MeshCollider)part.collider;
+					MeshCollider mc = null;
+					if (part.collider is MeshCollider) {
+						mc = (MeshCollider)part.collider;
+					} else {
+						Debug.Log("part collider is " + part.collider.GetType().ToString());
+					}
 
 					if (mc != null) {
 						//mc.sharedMesh.RecalculateBounds();
@@ -300,7 +305,7 @@ namespace DecouplerShroud {
 						botWidth = TrySnapToSize(botWidth, radialSnapMargin);
 						//Debug.Log("MeshSize: " + mc.sharedMesh.bounds.size.x + ", Scale: " + shroudAttatchedPart.transform.localScale.x+ ", MeshGO Scale" + mc.transform.localScale.x);
 					} else {
-						botWidth = part.collider.bounds.size.x * part.transform.localScale.x;
+						botWidth = part.collider.bounds.size.x;
 						botWidth = TrySnapToSize(botWidth, radialSnapMargin);
 						//Debug.Log("Size: " + shroudAttatchedPart.collider.bounds.size.x + ", " + shroudAttatchedPart.transform.localScale.x);
 					}
@@ -316,7 +321,12 @@ namespace DecouplerShroud {
 				if (shroudAttatchedPart.collider != null) {
 
 					//Check if meshCollider
-					MeshCollider mc = (MeshCollider)shroudAttatchedPart.collider;
+					MeshCollider mc = null;
+					if (shroudAttatchedPart.collider is MeshCollider) {
+						mc = (MeshCollider)shroudAttatchedPart.collider;
+					} else {
+						Debug.Log("attached collider is "+ shroudAttatchedPart.collider.GetType().ToString());
+					}
 
 					if (mc != null) {
 						//mc.sharedMesh.RecalculateBounds();
@@ -332,7 +342,7 @@ namespace DecouplerShroud {
 						topWidth = TrySnapToSize(topWidth, radialSnapMargin);
 						//Debug.Log("MeshSize: " + mc.sharedMesh.bounds.size.x + ", Scale: " + shroudAttatchedPart.transform.localScale.x+ ", MeshGO Scale" + mc.transform.localScale.x);
 					} else {
-						topWidth = shroudAttatchedPart.collider.bounds.size.x * shroudAttatchedPart.transform.localScale.x;
+						topWidth = shroudAttatchedPart.collider.bounds.size.x;
 						topWidth = TrySnapToSize(topWidth, radialSnapMargin);
 						//Debug.Log("Size: " + shroudAttatchedPart.collider.bounds.size.x + ", " + shroudAttatchedPart.transform.localScale.x);
 					}
