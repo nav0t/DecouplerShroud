@@ -73,6 +73,7 @@ namespace DecouplerShroud {
 		Vector3 lastShroudAttachedScale;
 		Vector3 lastShroudAttachedBounds;
 		Part lastShroudAttachedPart;
+		Part lastShroudedPart;
 
 		DragCubeList starDragCubes;
 
@@ -139,6 +140,20 @@ namespace DecouplerShroud {
 				}
 			}
 
+			if (lastShroudedPart != GetShroudedPart()) {
+				onShroudedPartChanged();
+				lastShroudedPart = GetShroudedPart();
+			}
+
+		}
+
+		void onShroudedPartChanged() {
+			if (HighLogic.LoadedSceneIsFlight) {
+				if (lastShroudedPart != null) {
+					//Debug.Log("shrouded Part Changed! was " + lastShroudedPart + " is " + GetShroudedPart());
+					lastShroudedPart.RemoveShield(this);
+				}
+			}
 		}
 
 		void detectRequiredRecalculation() {
@@ -550,7 +565,7 @@ namespace DecouplerShroud {
 		}
 
 		public bool ClosedAndLocked() {
-			return shroudEnabled;
+			return shroudEnabled && GetShroudedPart() != null;
 		}
 
 		public Vessel GetVessel() {
