@@ -16,11 +16,12 @@ namespace DecouplerShroud {
 		public float uvTop = 1;
 		public int sides = 24;
 		public float tiling = 1;
+		public int submesh = 0;
 
 		public Cylinder(int sides) {
 			this.sides = sides;
 		}
-		public Cylinder(int sides, float bottomStart, float height, float botWidth, float topWidth, float uvBot, float uvTop) {
+		public Cylinder(int sides, float bottomStart, float height, float botWidth, float topWidth, float uvBot, float uvTop, int submesh) {
 			this.bottomStart = bottomStart;
 			this.height = height;
 			this.botWidth = botWidth;
@@ -28,6 +29,7 @@ namespace DecouplerShroud {
 			this.uvBot = uvBot;
 			this.uvTop = uvTop;
 			this.sides = sides;
+			this.submesh = submesh;
 		}
 
 		//Basically the same as GenerateCylinders but without triangle generation
@@ -61,7 +63,7 @@ namespace DecouplerShroud {
 		}
 
 		//Generates meshdata for a single Cylinder, indexOffset used to have multiple cylinders in same mesh
-		public void GenerateCylinders(int indexOffset, Vector3[] verts, Vector3[] nors, Vector4[] tans, Vector2[] uvs, int[] tris) {
+		public void GenerateCylinders(int indexOffset, Vector3[] verts, Vector3[] nors, Vector4[] tans, Vector2[] uvs, List<int>[] tris) {
 
 			int res = sides + 1;
 			int vertOffset = indexOffset * 2 * res;
@@ -89,13 +91,13 @@ namespace DecouplerShroud {
 				tans[vertOffset + 2 * i + 0] = tan4;
 				tans[vertOffset + 2 * i + 1] = tan4;
 
-				tris[trisOffset + 6 * i + 0] = vertOffset + (2 * i + 0) % (2 * res);
-				tris[trisOffset + 6 * i + 1] = vertOffset + (2 * i + 1) % (2 * res);
-				tris[trisOffset + 6 * i + 2] = vertOffset + (2 * i + 2) % (2 * res);
+				tris[submesh].Add(vertOffset + (2 * i + 0) % (2 * res));
+				tris[submesh].Add(vertOffset + (2 * i + 1) % (2 * res));
+				tris[submesh].Add(vertOffset + (2 * i + 2) % (2 * res));
 
-				tris[trisOffset + 6 * i + 3] = vertOffset + (2 * i + 3) % (2 * res);
-				tris[trisOffset + 6 * i + 4] = vertOffset + (2 * i + 2) % (2 * res);
-				tris[trisOffset + 6 * i + 5] = vertOffset + (2 * i + 1) % (2 * res);
+				tris[submesh].Add(vertOffset + (2 * i + 3) % (2 * res));
+				tris[submesh].Add(vertOffset + (2 * i + 2) % (2 * res));
+				tris[submesh].Add(vertOffset + (2 * i + 1) % (2 * res));
 
 			}
 		}

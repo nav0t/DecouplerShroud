@@ -61,7 +61,7 @@ namespace DecouplerShroud {
 		bool setupFinished = false;
 		ModuleJettison engineShroud;
 		GameObject shroudGO;
-		Material shroudMat;
+		Material[] shroudMats;
 		ShroudShaper shroudCylinders;
 		bool turnedOffEngineShroud;
 
@@ -188,17 +188,17 @@ namespace DecouplerShroud {
 
 		//Gets textures from Textures folder and loads them into surfaceTextures list + set Field options
 		void getTextureNames() {
-			if (ShroudTexture.surfaceTextures == null) {
+			if (ShroudTexture.shroudTextures == null) {
 				ShroudTexture.LoadTextures();
 			}
 
-			if (textureIndex >= ShroudTexture.surfaceTextures.Count) {
+			if (textureIndex >= ShroudTexture.shroudTextures.Count) {
 				textureIndex = 0;
 			}
 
-			string[] options = new string[ShroudTexture.surfaceTextures.Count];
+			string[] options = new string[ShroudTexture.shroudTextures.Count];
 			for (int i = 0; i < options.Length; i++) {
-				options[i] = ShroudTexture.surfaceTextures[i].name;
+				options[i] = ShroudTexture.shroudTextures[i].name;
 			}
 
 			BaseField textureField = Fields[nameof(textureIndex)];
@@ -262,11 +262,29 @@ namespace DecouplerShroud {
 
 			//Debug.Log("Setting Texture to " + textureIndex);
 			//Debug.Log("eq: " + (shroudMat == shroudGO.GetComponent<Renderer>().sharedMaterial));
-			if (shroudMat != shroudGO.GetComponent<Renderer>().sharedMaterial) {
-				shroudMat = shroudGO.GetComponent<Renderer>().sharedMaterial;
-			}
-			shroudMat.SetTexture("_MainTex", ShroudTexture.surfaceTextures[textureIndex].texture);
-			shroudMat.SetTexture("_BumpMap", ShroudTexture.surfaceTextures[textureIndex].normalMap);
+			
+			ShroudTexture shroudTex = ShroudTexture.shroudTextures[textureIndex];
+
+			SurfaceTexture surfOut = shroudTex.textures[0];
+			SurfaceTexture surfTop = shroudTex.textures[1];
+			SurfaceTexture surfIns = shroudTex.textures[2];
+
+			shroudMats[0].SetTexture("_MainTex", surfOut.texture);
+			shroudMats[0].SetTexture("_BumpMap", surfOut.normalMap);
+			shroudMats[0].SetFloat("_Shininess", surfOut.shininess);
+			shroudMats[0].SetColor("_SpecColor", surfOut.specularColor);
+
+			shroudMats[1].SetTexture("_MainTex", surfTop.texture);
+			shroudMats[1].SetTexture("_BumpMap", surfTop.normalMap);
+			shroudMats[1].SetFloat("_Shininess", surfTop.shininess);
+			shroudMats[1].SetColor("_SpecColor", surfTop.specularColor);
+
+			shroudMats[2].SetTexture("_MainTex", surfIns.texture);
+			shroudMats[2].SetTexture("_BumpMap", surfIns.normalMap);
+			shroudMats[2].SetFloat("_Shininess", surfIns.shininess);
+			shroudMats[2].SetColor("_SpecColor", surfIns.specularColor);
+
+			shroudGO.GetComponent<Renderer>().materials = shroudMats;
 		}
 
 		void partReattached() {
@@ -414,7 +432,9 @@ namespace DecouplerShroud {
 
 		void destroyShroud() {
 			Destroy(shroudGO);
-			Destroy(shroudMat);
+			foreach (Material mat in shroudMats) {
+				Destroy(mat);
+			}
 		}
 
 		//Generates the shroud for the first time
@@ -469,25 +489,27 @@ namespace DecouplerShroud {
 			shroudGO.transform.localRotation = Quaternion.identity;
 			shroudGO.AddComponent<MeshFilter>().sharedMesh = shroudCylinders.multiCylinder.mesh;
 
-			if (shroudMat != null) {
-				Destroy(shroudMat);
+			if (shroudMats != null) {
+				foreach(Material mat in shroudMats) {
+					Destroy(mat);
+				}
 			}
-			shroudMat = CreateMat();
 			shroudGO.AddComponent<MeshRenderer>();
-			shroudGO.GetComponent<Renderer>().material = shroudMat;
+
+			//Setup materials
+			CreateMaterials();
+			updateTexture();
+
 			generateDragCube();
 		}
 
 		//Creates the material for the mesh
-		Material CreateMat() {
-			Material mat = new Material(Shader.Find("KSP/Bumped Specular"));
+		void CreateMaterials() {
+			shroudMats = new Material[3];
+			for (int i = 0; i < shroudMats.Length; i++) {
+				shroudMats[i] = new Material(Shader.Find("KSP/Bumped Specular"));
+			}
 
-			mat.SetTexture("_MainTex", ShroudTexture.surfaceTextures[textureIndex].texture);
-			mat.SetTexture("_BumpMap", ShroudTexture.surfaceTextures[textureIndex].normalMap);
-
-			mat.SetFloat("_Shininess", .07f);
-			mat.SetColor("_SpecColor", Color.white * (95 / 255f));
-			return mat;
 		}
 
 		bool destroyShroudIfNoTopNode() {

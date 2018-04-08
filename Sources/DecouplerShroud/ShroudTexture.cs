@@ -8,38 +8,41 @@ using UnityEngine;
 namespace DecouplerShroud {
 	class ShroudTexture {
 		public string name = "ERR";
-		public Texture texture;
-		public Texture normalMap;
+		public List<SurfaceTexture> textures;
 
-		public static List<ShroudTexture> surfaceTextures;
+		public static List<ShroudTexture> shroudTextures;
 
 		
 		public ShroudTexture() {
-
+			textures = new List<SurfaceTexture>();
 		}
 
-		public ShroudTexture(string name, Texture texture, Texture normalMap) {
+		public ShroudTexture(string name) {
 			this.name = name;
-			this.texture = texture;
-			this.normalMap = normalMap;
+			textures = new List<SurfaceTexture>();
 		}
 
 		public static void LoadTextures() {
-			if (surfaceTextures == null) {
+			if (shroudTextures == null) {
 				List<GameDatabase.TextureInfo> textures = GameDatabase.Instance.GetAllTexturesInFolder("DecouplerShroud/Textures/");
-				surfaceTextures = new List<ShroudTexture>();
+				shroudTextures = new List<ShroudTexture>();
 
 				foreach(ConfigNode texconf in GameDatabase.Instance.GetConfigNodes("ShroudTexture")) {
+
+					if (!texconf.HasNode("outside") || !texconf.HasNode("top") || !texconf.HasNode("inside")) {
+						Debug.LogError("Decoupler Shroud texture config missing node: "+ texconf);
+						continue;
+					}
+
 					ShroudTexture tex = new ShroudTexture();
-					Debug.Log(texconf.GetValue("name"));
-					Debug.Log(texconf.GetValue("texture"));
-					Debug.Log(texconf.GetValue("normals"));
+					if (texconf.HasValue("name"))
+						tex.name = texconf.GetValue("name");
 
-					tex.name = texconf.GetValue("name");
-					tex.texture = GameDatabase.Instance.GetTexture(texconf.GetValue("texture"), false);
-					tex.normalMap = GameDatabase.Instance.GetTexture(texconf.GetValue("normals"), false);
+					tex.textures.Add(new SurfaceTexture(texconf.GetNode("outside")));
+					tex.textures.Add(new SurfaceTexture(texconf.GetNode("top")));
+					tex.textures.Add(new SurfaceTexture(texconf.GetNode("inside")));
 
-					surfaceTextures.Add(tex);
+					shroudTextures.Add(tex);
 				}
 			}
 		}

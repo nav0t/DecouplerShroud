@@ -16,7 +16,7 @@ namespace DecouplerShroud {
 		public ShroudShaper(ModuleDecouplerShroud decouplerShroud, int sides) {
 			this.sides = sides;
 			this.decouplerShroud = decouplerShroud;
-			this.multiCylinder = new MultiCylinder(sides, 5);
+			this.multiCylinder = new MultiCylinder(sides, 5, 3);
 		}
 		
 		void getDecouplerShroudValues() {
@@ -32,17 +32,24 @@ namespace DecouplerShroud {
 		}
 
 		public void generate() {
+			setCylinderValues();
 			multiCylinder.GenerateCylinders();
-			update();
 		}
 
 		public void update() {
+			setCylinderValues();
+
+			//Updates mesh
+			multiCylinder.UpdateCylinders();
+		}
+
+		public void setCylinderValues() {
 			getDecouplerShroudValues();
 
 			topWidth += antiZFightSizeIncrease;
 			botWidth += antiZFightSizeIncrease;
 
-			float maxWidth = (topWidth > botWidth)? topWidth : botWidth;
+			float maxWidth = (topWidth > botWidth) ? topWidth : botWidth;
 			float widthDiff = (topWidth > botWidth) ? topWidth - botWidth : botWidth - topWidth;
 			Cylinder c0 = multiCylinder.cylinders[0]; //outside shell
 			Cylinder c1 = multiCylinder.cylinders[1]; //top flat bit
@@ -54,6 +61,7 @@ namespace DecouplerShroud {
 			bevel = bevel.normalized * topBevelSize;
 
 			//Creates bottom edge
+			c3.submesh = 0;
 			c3.bottomStart = vertOffset - bottomEdgeSize;
 			c3.height = bottomEdgeSize;
 			c3.botWidth = botWidth - bottomEdgeSize;
@@ -63,49 +71,50 @@ namespace DecouplerShroud {
 			c3.uvTop = .01f;
 
 			//Sets outer shell values
+			c0.submesh = 0;
 			c0.bottomStart = vertOffset;
 			c0.height = height - bevel.y;
 			c0.botWidth = botWidth;
 			c0.topWidth = topWidth;
 			c0.tiling = 2;
 			c0.uvBot = 0.01f;
-			c0.uvTop = 240 / 512f - .01f;
+			c0.uvTop = 1 - .01f;
 			//c0.uvTop = (height) / (6*maxWidth / c0.tiling);
 			//if (c0.uvTop > 240 / 512f) {
 			//}
 
 			//Set top Bevel 
+			c4.submesh = 0;
 			c4.bottomStart = vertOffset + height - bevel.y;
 			c4.height = bevel.y;
 			c4.botWidth = topWidth;
 			c4.topWidth = topWidth - bevel.x;
 			c4.tiling = 2;
-			c4.uvBot = 240 / 512f - .01f;
-			c4.uvTop = 240 / 512f;
+			c4.uvBot = 1 - .01f;
+			c4.uvTop = 1;
 
 			//Sets top bit values
-			c1.bottomStart = vertOffset+height;
+			c1.submesh = 1;
+			c1.bottomStart = vertOffset + height;
 			c1.height = 0;
 			c1.botWidth = topWidth - bevel.x;
 			c1.topWidth = (topWidth - bevel.x) - thickness * topWidth;
-			c1.uvBot = (241 / 512f);
-			c1.uvTop = ((512-241) / 512f);
-			c1.tiling = ((int)(6*(30 / 512f) / (thickness * topWidth) * (6 * topWidth))) / 6f;
+			c1.uvBot = 0;
+			c1.uvTop = 1;
+			c1.tiling = ((int)(1 / (thickness)));
 
 			//Sets inner shell values
+			c2.submesh = 2;
 			c2.bottomStart = vertOffset + height;
 			c2.height = -height;
 			c2.botWidth = topWidth - thickness * topWidth;
 			c2.topWidth = botWidth - thickness * topWidth;
-			c2.uvBot = ((512 - 240) / 512f);
+			c2.uvBot = 0;
 			c2.uvTop = 1;
 
 
 			topWidth -= antiZFightSizeIncrease;
 			botWidth -= antiZFightSizeIncrease;
-
-			//Updates mesh
-			multiCylinder.UpdateCylinders();
 		}
 	}
 }
