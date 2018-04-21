@@ -15,7 +15,6 @@ namespace DecouplerShroud {
 		public float uvBot = 0;
 		public float uvTop = 1;
 		public int sides = 24;
-		public float tiling = 1;
 		public int submesh = 0;
 
 		public Cylinder(int sides) {
@@ -52,8 +51,8 @@ namespace DecouplerShroud {
 				nors[vertOffset + 2 * i + 0] = nor;
 				nors[vertOffset + 2 * i + 1] = nor;
 
-				uvs[vertOffset + 2 * i + 0] = new Vector2(tiling * i / (float)sides, uvBot);
-				uvs[vertOffset + 2 * i + 1] = new Vector2(tiling * i / (float)sides, uvTop);
+				uvs[vertOffset + 2 * i + 0] = new Vector2(i / (float)sides, uvBot);
+				uvs[vertOffset + 2 * i + 1] = new Vector2(i / (float)sides, uvTop);
 
 				Vector4 tan4 = tan;
 				tan4.w = (Vector3.Dot(Vector3.Cross(nor, tan), tanv) < 0.0f) ? -1.0f : 1.0f; ;
@@ -83,8 +82,8 @@ namespace DecouplerShroud {
 				nors[vertOffset + 2 * i + 0] = nor;
 				nors[vertOffset + 2 * i + 1] = nor;
 
-				uvs[vertOffset + 2 * i + 0] = new Vector2(tiling * i / (float)sides, uvBot);
-				uvs[vertOffset + 2 * i + 1] = new Vector2(tiling * i / (float)sides, uvTop);
+				uvs[vertOffset + 2 * i + 0] = new Vector2(i / (float)sides, uvBot);
+				uvs[vertOffset + 2 * i + 1] = new Vector2(i / (float)sides, uvTop);
 
 				Vector4 tan4 = tan;
 				tan4.w = (Vector3.Dot(Vector3.Cross(nor, tan), tanv) < 0.0f) ? -1.0f : 1.0f; ;

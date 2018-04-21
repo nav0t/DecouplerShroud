@@ -66,7 +66,6 @@ namespace DecouplerShroud {
 			c3.height = bottomEdgeSize;
 			c3.botWidth = botWidth - bottomEdgeSize;
 			c3.topWidth = botWidth;
-			c3.tiling = 2;
 			c3.uvBot = 0;
 			c3.uvTop = .01f;
 
@@ -76,7 +75,6 @@ namespace DecouplerShroud {
 			c0.height = height - bevel.y;
 			c0.botWidth = botWidth;
 			c0.topWidth = topWidth;
-			c0.tiling = 2;
 			c0.uvBot = 0.01f;
 			c0.uvTop = 1 - .01f;
 			//c0.uvTop = (height) / (6*maxWidth / c0.tiling);
@@ -89,7 +87,6 @@ namespace DecouplerShroud {
 			c4.height = bevel.y;
 			c4.botWidth = topWidth;
 			c4.topWidth = topWidth - bevel.x;
-			c4.tiling = 2;
 			c4.uvBot = 1 - .01f;
 			c4.uvTop = 1;
 
@@ -101,7 +98,6 @@ namespace DecouplerShroud {
 			c1.topWidth = (topWidth - bevel.x) - thickness * topWidth;
 			c1.uvBot = 0;
 			c1.uvTop = 1;
-			c1.tiling = ((int)(1 / (thickness)));
 
 			//Sets inner shell values
 			c2.submesh = 2;
