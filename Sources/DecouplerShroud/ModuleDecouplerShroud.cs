@@ -274,30 +274,15 @@ namespace DecouplerShroud {
 
 		void updateTexture(object arg) { updateTexture(); }
 		void updateTexture() {
-
-			//Debug.Log("Setting Texture to " + textureIndex);
-			//Debug.Log("eq: " + (shroudMat == shroudGO.GetComponent<Renderer>().sharedMaterial));
 			
 			ShroudTexture shroudTex = ShroudTexture.shroudTextures[textureIndex];
 
-			SurfaceTexture surfOut = shroudTex.textures[0];
-			SurfaceTexture surfTop = shroudTex.textures[1];
-			SurfaceTexture surfIns = shroudTex.textures[2];
+			Vector2 sideSize = new Vector2(botWidth, new Vector2(height,topWidth-botWidth).magnitude);
+			Vector2 topSize = new Vector2(topWidth, topWidth * thickness);
 
-			shroudMats[0].SetTexture("_MainTex", surfOut.texture);
-			shroudMats[0].SetTexture("_BumpMap", surfOut.normalMap);
-			shroudMats[0].SetFloat("_Shininess", surfOut.shininess);
-			shroudMats[0].SetColor("_SpecColor", surfOut.specularColor);
-
-			shroudMats[1].SetTexture("_MainTex", surfTop.texture);
-			shroudMats[1].SetTexture("_BumpMap", surfTop.normalMap);
-			shroudMats[1].SetFloat("_Shininess", surfTop.shininess);
-			shroudMats[1].SetColor("_SpecColor", surfTop.specularColor);
-
-			shroudMats[2].SetTexture("_MainTex", surfIns.texture);
-			shroudMats[2].SetTexture("_BumpMap", surfIns.normalMap);
-			shroudMats[2].SetFloat("_Shininess", surfIns.shininess);
-			shroudMats[2].SetColor("_SpecColor", surfIns.specularColor);
+			shroudTex.textures[0].SetMaterialProperties(shroudMats[0], sideSize);
+			shroudTex.textures[1].SetMaterialProperties(shroudMats[1], topSize);
+			shroudTex.textures[2].SetMaterialProperties(shroudMats[2], sideSize);
 
 			shroudGO.GetComponent<Renderer>().materials = shroudMats;
 		}
@@ -467,6 +452,7 @@ namespace DecouplerShroud {
 			if (shroudGO == null || shroudCylinders == null) {
 				createShroudGO();
 			}
+			updateTexture();
 			shroudCylinders.update();
 		}
 
