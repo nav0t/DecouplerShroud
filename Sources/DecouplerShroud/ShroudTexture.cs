@@ -17,11 +17,6 @@ namespace DecouplerShroud {
 			textures = new List<SurfaceTexture>();
 		}
 
-		public ShroudTexture(string name) {
-			this.name = name;
-			textures = new List<SurfaceTexture>();
-		}
-
 		public static void LoadTextures() {
 			if (shroudTextures == null) {
 				List<GameDatabase.TextureInfo> textures = GameDatabase.Instance.GetAllTexturesInFolder("DecouplerShroud/Textures/");

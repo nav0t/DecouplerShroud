@@ -39,9 +39,12 @@ namespace DecouplerShroud {
 		[UI_FloatEdit(scene = UI_Scene.Editor, minValue = -2f, maxValue = 2f, incrementLarge = .1f, incrementSlide = 0.01f, incrementSmall = 0.01f, unit = "m", sigFigs = 2, useSI = false)]
 		public float vertOffset = 0.0f;
 
-		[KSPField(guiName = "Shroud Texture", isPersistant = true, guiActiveEditor = true, guiActive = false)]
+		[KSPField(guiName = "Shroud Texture", isPersistant = false, guiActiveEditor = true, guiActive = false)]
 		[UI_ChooseOption(affectSymCounterparts = UI_Scene.Editor, options = new[] { "None" }, scene = UI_Scene.Editor, suppressEditorShipModified = true)]
 		public int textureIndex;
+
+		[KSPField(isPersistant = true)]
+		public string textureName;
 
 		[KSPField(isPersistant = false)]
 		public float defaultBotWidth = 0;
@@ -86,7 +89,6 @@ namespace DecouplerShroud {
 
 			starDragCubes = part.DragCubes;
 			getTextureNames();
-
 			//Remove copied decoupler shroud when copied
 			Transform copiedDecouplerShroud = transform.FindChild("DecouplerShroud");
 			if (copiedDecouplerShroud != null) {
@@ -214,6 +216,11 @@ namespace DecouplerShroud {
 			string[] options = new string[ShroudTexture.shroudTextures.Count];
 			for (int i = 0; i < options.Length; i++) {
 				options[i] = ShroudTexture.shroudTextures[i].name;
+
+				//Sets textureindex to the saved texture
+				if (options[i].Equals(textureName)) {
+					textureIndex = i;
+				}
 			}
 
 			BaseField textureField = Fields[nameof(textureIndex)];
@@ -276,6 +283,9 @@ namespace DecouplerShroud {
 		void updateTexture() {
 			
 			ShroudTexture shroudTex = ShroudTexture.shroudTextures[textureIndex];
+
+			//save current textures name
+			textureName = shroudTex.name;
 
 			Vector2 sideSize = new Vector2(botWidth, new Vector2(height,topWidth-botWidth).magnitude);
 			Vector2 topSize = new Vector2(topWidth, topWidth * thickness);
