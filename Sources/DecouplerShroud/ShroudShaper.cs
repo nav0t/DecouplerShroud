@@ -12,7 +12,7 @@ namespace DecouplerShroud {
 		public MultiCylinder multiCylinder;
 		ModuleDecouplerShroud decouplerShroud;
 		float vertOffset, height, botWidth, topWidth, thickness, bottomEdgeSize, topBevelSize, antiZFightSizeIncrease;
-
+		int outerEdgeLoops, topEdgeLoops;
 		public ShroudShaper(ModuleDecouplerShroud decouplerShroud, int sides) {
 			this.sides = sides;
 			this.decouplerShroud = decouplerShroud;
@@ -28,7 +28,8 @@ namespace DecouplerShroud {
 			this.bottomEdgeSize = decouplerShroud.bottomEdgeSize;
 			this.topBevelSize = decouplerShroud.topBevelSize;
 			this.antiZFightSizeIncrease = decouplerShroud.antiZFightSizeIncrease;
-
+			this.outerEdgeLoops = decouplerShroud.outerEdgeLoops;
+			this.topEdgeLoops = decouplerShroud.topEdgeLoops;
 		}
 
 		public void generate() {
@@ -77,6 +78,7 @@ namespace DecouplerShroud {
 			c0.topWidth = topWidth;
 			c0.uvBot = 0.01f;
 			c0.uvTop = 1 - .01f;
+			c0.rings = outerEdgeLoops;
 			//c0.uvTop = (height) / (6*maxWidth / c0.tiling);
 			//if (c0.uvTop > 240 / 512f) {
 			//}
@@ -98,6 +100,7 @@ namespace DecouplerShroud {
 			c1.topWidth = (topWidth - bevel.x) - thickness * topWidth;
 			c1.uvBot = 0;
 			c1.uvTop = 1;
+			c1.rings = topEdgeLoops;
 
 			//Sets inner shell values
 			c2.submesh = 2;

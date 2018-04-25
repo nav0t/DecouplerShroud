@@ -37,17 +37,26 @@ namespace DecouplerShroud {
 
 			int res = faces + 1;
 
-			verts = new Vector3[res * 2 * cylinders.Length];
-			nors = new Vector3[res * 2 * cylinders.Length];
-			tans = new Vector4[res * 2 * cylinders.Length];
-			uvs = new Vector2[res * 2 * cylinders.Length];
+			int ringCount = 0;
+
+			foreach (Cylinder c in cylinders) {
+				ringCount += c.rings;
+			}
+
+			verts = new Vector3[res * ringCount];
+			nors = new Vector3[res * ringCount];
+			tans = new Vector4[res * ringCount];
+			uvs = new Vector2[res * ringCount];
 			tris = new List<int>[subMeshCount];
 			for (int i = 0; i < subMeshCount; i++) {
 				tris[i] = new List<int>();
 			}
 
+			int ringOffset = 0;
+
 			for (int i = 0; i < cylinders.Length; i++) {
-				cylinders[i].GenerateCylinders(i, verts, nors, tans, uvs, tris);
+				cylinders[i].GenerateCylinders(ringOffset, verts, nors, tans, uvs, tris);
+				ringOffset += cylinders[i].rings;
 			}
 
 			mesh.vertices = verts;
@@ -63,8 +72,10 @@ namespace DecouplerShroud {
 		//Update already created mesh
 		public void UpdateCylinders() {
 
+			int ringOffset = 0;
 			for (int i = 0; i < cylinders.Length; i++) {
-				cylinders[i].UpdateCylinder(i, verts, nors, tans, uvs);
+				cylinders[i].UpdateCylinder(ringOffset, verts, nors, tans, uvs);
+				ringOffset += cylinders[i].rings;
 			}
 
 			mesh.vertices = verts;

@@ -16,88 +16,96 @@ namespace DecouplerShroud {
 		public float uvTop = 1;
 		public int sides = 24;
 		public int submesh = 0;
+		public int rings = 2;
 
 		public Cylinder(int sides) {
 			this.sides = sides;
 		}
-		public Cylinder(int sides, float bottomStart, float height, float botWidth, float topWidth, float uvBot, float uvTop, int submesh) {
-			this.bottomStart = bottomStart;
-			this.height = height;
-			this.botWidth = botWidth;
-			this.topWidth = topWidth;
-			this.uvBot = uvBot;
-			this.uvTop = uvTop;
-			this.sides = sides;
-			this.submesh = submesh;
-		}
 
 		//Basically the same as GenerateCylinders but without triangle generation
-		public void UpdateCylinder(int indexOffset, Vector3[] verts, Vector3[] nors, Vector4[] tans, Vector2[] uvs) {
+		public void UpdateCylinder(int ringOffset, Vector3[] verts, Vector3[] nors, Vector4[] tans, Vector2[] uvs) {
 
+			//Last vert needs to be done twice for uv coords
 			int res = sides + 1;
-			int vertOffset = indexOffset * 2 * res;
+
+			int vertOffset = ringOffset * res;
 
 			for (int i = 0; i < res; i++) {
-				float ang = i / (float)(sides) * 2 * Mathf.PI;
+				float uVal = i / (float)(sides);
+
+
+				float ang = uVal * 2 * Mathf.PI;
+
 				Vector3 pos = new Vector3(Mathf.Cos(ang), 0, Mathf.Sin(ang)) / 2;
 				Vector3 tan = (new Vector3(-Mathf.Sin(ang), 0, Mathf.Cos(ang))).normalized;
 				Vector3 tanv = Vector3.up * height - pos * (botWidth - topWidth);
 
 				Vector3 nor = -Vector3.Cross(tan, tanv).normalized;
 
-				verts[vertOffset + 2 * i + 0] = pos * botWidth + Vector3.up * bottomStart;
-				verts[vertOffset + 2 * i + 1] = pos * topWidth + Vector3.up * (height + bottomStart);
-
-				nors[vertOffset + 2 * i + 0] = nor;
-				nors[vertOffset + 2 * i + 1] = nor;
-
-				uvs[vertOffset + 2 * i + 0] = new Vector2(i / (float)sides, uvBot);
-				uvs[vertOffset + 2 * i + 1] = new Vector2(i / (float)sides, uvTop);
-
 				Vector4 tan4 = tan;
-				tan4.w = (Vector3.Dot(Vector3.Cross(nor, tan), tanv) < 0.0f) ? -1.0f : 1.0f; ;
-				tans[vertOffset + 2 * i + 0] = tan4;
-				tans[vertOffset + 2 * i + 1] = tan4;
+				tan4.w = (Vector3.Dot(Vector3.Cross(nor, tan), tanv) < 0.0f) ? -1.0f : 1.0f;
+
+				Vector3 posBot = pos * botWidth + Vector3.up * bottomStart;
+				Vector3 posTop = pos * topWidth + Vector3.up * (height + bottomStart);
+
+				for (int r = 0; r < rings; r++) {
+
+					float lerp = (float)r / (float)(rings - 1);
+					verts[vertOffset + rings * i + r] = Vector3.Lerp(posBot, posTop, lerp);
+
+					nors[vertOffset + rings * i + r] = nor;
+
+					tans[vertOffset + rings * i + r] = tan4;
+
+				}
 			}
 		}
 
 		//Generates meshdata for a single Cylinder, indexOffset used to have multiple cylinders in same mesh
-		public void GenerateCylinders(int indexOffset, Vector3[] verts, Vector3[] nors, Vector4[] tans, Vector2[] uvs, List<int>[] tris) {
+		public void GenerateCylinders(int ringOffset, Vector3[] verts, Vector3[] nors, Vector4[] tans, Vector2[] uvs, List<int>[] tris) {
 
+			//Last vert needs to be done twice for uv coords
 			int res = sides + 1;
-			int vertOffset = indexOffset * 2 * res;
-			int trisOffset = indexOffset * 6 * res;
+			int vertOffset = ringOffset * res;
 
 			for (int i = 0; i < res; i++) {
-				float ang = i / (float)(sides) * 2 * Mathf.PI;
+
+				float uVal = i / (float)(sides);
+
+				float ang = uVal * 2 * Mathf.PI;
+
 				Vector3 pos = new Vector3(Mathf.Cos(ang), 0, Mathf.Sin(ang)) / 2;
 				Vector3 tan = (new Vector3(-Mathf.Sin(ang), 0, Mathf.Cos(ang))).normalized;
 				Vector3 tanv = Vector3.up * height - pos * (botWidth - topWidth);
 
 				Vector3 nor = -Vector3.Cross(tan, tanv).normalized;
 
-				verts[vertOffset + 2 * i + 0] = pos * botWidth + Vector3.up * bottomStart;
-				verts[vertOffset + 2 * i + 1] = pos * topWidth + Vector3.up * (height + bottomStart);
-
-				nors[vertOffset + 2 * i + 0] = nor;
-				nors[vertOffset + 2 * i + 1] = nor;
-
-				uvs[vertOffset + 2 * i + 0] = new Vector2(i / (float)sides, uvBot);
-				uvs[vertOffset + 2 * i + 1] = new Vector2(i / (float)sides, uvTop);
-
 				Vector4 tan4 = tan;
-				tan4.w = (Vector3.Dot(Vector3.Cross(nor, tan), tanv) < 0.0f) ? -1.0f : 1.0f; ;
-				tans[vertOffset + 2 * i + 0] = tan4;
-				tans[vertOffset + 2 * i + 1] = tan4;
+				tan4.w = (Vector3.Dot(Vector3.Cross(nor, tan), tanv) < 0.0f) ? -1.0f : 1.0f;
 
-				tris[submesh].Add(vertOffset + (2 * i + 0) % (2 * res));
-				tris[submesh].Add(vertOffset + (2 * i + 1) % (2 * res));
-				tris[submesh].Add(vertOffset + (2 * i + 2) % (2 * res));
+				Vector3 posBot = pos * botWidth + Vector3.up * bottomStart;
+				Vector3 posTop = pos * topWidth + Vector3.up * (height + bottomStart);
+				for (int r = 0; r < rings; r++) {
 
-				tris[submesh].Add(vertOffset + (2 * i + 3) % (2 * res));
-				tris[submesh].Add(vertOffset + (2 * i + 2) % (2 * res));
-				tris[submesh].Add(vertOffset + (2 * i + 1) % (2 * res));
+					float lerp = (float)r / (float)(rings - 1);
+					verts[vertOffset + rings * i + r] = Vector3.Lerp(posBot, posTop, lerp);
 
+					nors[vertOffset + rings * i + r] = nor;
+
+					tans[vertOffset + rings * i + r] = tan4;
+
+					uvs[vertOffset + rings * i + r] = new Vector2(uVal, Mathf.Lerp(uvBot, uvTop, lerp));
+
+					if (r < rings - 1 && i < res - 1) {
+						tris[submesh].Add(vertOffset + r + rings * i + 0);
+						tris[submesh].Add(vertOffset + r + rings * i + 1);
+						tris[submesh].Add(vertOffset + r + rings * i + rings);
+
+						tris[submesh].Add(vertOffset + r + rings * i + rings + 1);
+						tris[submesh].Add(vertOffset + r + rings * i + rings);
+						tris[submesh].Add(vertOffset + r + rings * i + 1);
+					}
+				}
 			}
 		}
 	}

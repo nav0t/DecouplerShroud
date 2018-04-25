@@ -60,6 +60,10 @@ namespace DecouplerShroud {
 		public float topBevelSize = .05f;
 		[KSPField(isPersistant = false)]
 		public float antiZFightSizeIncrease = .001f;
+		[KSPField(isPersistant = false)]
+		public int outerEdgeLoops = 13;
+		[KSPField(isPersistant = false)]
+		public int topEdgeLoops = 7;
 
 		bool setupFinished = false;
 		ModuleJettison engineShroud;
