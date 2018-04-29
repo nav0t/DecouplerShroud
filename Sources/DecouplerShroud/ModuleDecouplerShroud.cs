@@ -291,7 +291,7 @@ namespace DecouplerShroud {
 			//save current textures name
 			textureName = shroudTex.name;
 
-			Vector2 sideSize = new Vector2(botWidth, new Vector2(height,topWidth-botWidth).magnitude);
+			Vector2 sideSize = new Vector2((botWidth+topWidth)/2.0f, new Vector2(height,topWidth-botWidth).magnitude);
 			Vector2 topSize = new Vector2(topWidth, topWidth * thickness);
 
 			shroudTex.textures[0].SetMaterialProperties(shroudMats[0], sideSize);
