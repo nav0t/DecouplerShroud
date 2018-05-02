@@ -11,7 +11,7 @@ namespace DecouplerShroud {
 		public Texture normalMap;
 
 		public float shininess = 0.7f;
-		public Color specularColor = Color.white * .4f;
+		public Color specularColor = Color.white * .2f;
 
 		public Vector2 scale = new Vector2(1, 1);
 
@@ -82,7 +82,7 @@ namespace DecouplerShroud {
 			if (step > 0) {
 				s -= 1;
 				s /= step;
-				s = Mathf.Ceil(s);
+				s = Mathf.Round(s);
 				s *= step;
 				s += 1;
 			}

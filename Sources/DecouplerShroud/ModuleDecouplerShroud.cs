@@ -291,7 +291,7 @@ namespace DecouplerShroud {
 			//save current textures name
 			textureName = shroudTex.name;
 
-			Vector2 sideSize = new Vector2((botWidth+topWidth)/2.0f, new Vector2(height,topWidth-botWidth).magnitude);
+			Vector2 sideSize = new Vector2(Mathf.Max(botWidth,topWidth), new Vector2(height,topWidth-botWidth).magnitude);
 			Vector2 topSize = new Vector2(topWidth, topWidth * thickness);
 
 			shroudTex.textures[0].SetMaterialProperties(shroudMats[0], sideSize);
@@ -444,10 +444,20 @@ namespace DecouplerShroud {
 			}
 		}
 
+		public void OnDestroy() {
+			destroyShroud();
+		}
+
 		void destroyShroud() {
-			Destroy(shroudGO);
-			foreach (Material mat in shroudMats) {
-				Destroy(mat);
+			if (shroudGO != null) {
+				Destroy(shroudGO);
+			}
+			if (shroudMats != null) {
+				foreach (Material mat in shroudMats) {
+					if (mat != null) {
+						Destroy(mat);
+					}
+				}
 			}
 		}
 
