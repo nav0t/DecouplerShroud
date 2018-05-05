@@ -16,7 +16,7 @@ namespace DecouplerShroud {
 		public ShroudShaper(ModuleDecouplerShroud decouplerShroud, int sides) {
 			this.sides = sides;
 			this.decouplerShroud = decouplerShroud;
-			this.multiCylinder = new MultiCylinder(sides, 5, 3);
+			this.multiCylinder = new MultiCylinder(sides, 6, 3);
 		}
 		
 		void getDecouplerShroudValues() {
@@ -57,6 +57,8 @@ namespace DecouplerShroud {
 			Cylinder c2 = multiCylinder.cylinders[2]; //inside
 			Cylinder c3 = multiCylinder.cylinders[3]; //bottom tucked in edge
 			Cylinder c4 = multiCylinder.cylinders[4]; //top bevel in edge
+			Cylinder c5 = multiCylinder.cylinders[5]; //bottom flat
+
 
 			Vector2 bevel = new Vector2((botWidth - topWidth), height).normalized + Vector2.right;
 			bevel = bevel.normalized * topBevelSize;
@@ -102,10 +104,20 @@ namespace DecouplerShroud {
 			c1.uvTop = 1;
 			c1.rings = topEdgeLoops;
 
+			//Sets bottom flat bit
+			c5.submesh = 1;
+			c5.bottomStart = vertOffset - bottomEdgeSize;
+			c5.height = 0;
+			c5.topWidth = botWidth - bottomEdgeSize;
+			c5.botWidth = (botWidth) - thickness * topWidth;
+			c5.uvBot = 0;
+			c5.uvTop = 1;
+			c5.rings = topEdgeLoops;
+
 			//Sets inner shell values
 			c2.submesh = 2;
 			c2.bottomStart = vertOffset + height;
-			c2.height = -height;
+			c2.height = -height - bottomEdgeSize;
 			c2.botWidth = topWidth - thickness * topWidth;
 			c2.topWidth = botWidth - thickness * topWidth;
 			c2.uvBot = 0;
