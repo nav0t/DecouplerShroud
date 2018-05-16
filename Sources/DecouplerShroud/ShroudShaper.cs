@@ -109,7 +109,7 @@ namespace DecouplerShroud {
 			c5.bottomStart = vertOffset - bottomEdgeSize;
 			c5.height = 0;
 			c5.topWidth = botWidth - bottomEdgeSize;
-			c5.botWidth = (botWidth) - thickness * topWidth;
+			c5.botWidth = Mathf.Min(botWidth - thickness * topWidth, botWidth - bottomEdgeSize);
 			c5.uvBot = 0;
 			c5.uvTop = 1;
 			c5.rings = topEdgeLoops;
@@ -119,7 +119,7 @@ namespace DecouplerShroud {
 			c2.bottomStart = vertOffset + height;
 			c2.height = -height - bottomEdgeSize;
 			c2.botWidth = topWidth - thickness * topWidth;
-			c2.topWidth = botWidth - thickness * topWidth;
+			c2.topWidth = Mathf.Min(botWidth - thickness * topWidth, botWidth - bottomEdgeSize);
 			c2.uvBot = 0;
 			c2.uvTop = 1;
 
