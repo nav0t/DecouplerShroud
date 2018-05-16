@@ -1,9 +1,11 @@
 {
   "NAME": "DecouplerShroud",
+  "URL":"https://raw.githubusercontent.com/nav0t/DecouplerShroud/master/GameData/DecouplerShroud/DecouplerShroud.version",
+  "DOWNLOAD":"https://spacedock.info/mod/1692/Decoupler%20Shroud",
   "VERSION": {
     "MAJOR": 0,
     "MINOR": 4,
-    "PATCH": 3
+    "PATCH": 4
   },
   "KSP_VERSION": {
     "MAJOR": 1,
