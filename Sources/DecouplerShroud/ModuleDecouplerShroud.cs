@@ -66,7 +66,7 @@ namespace DecouplerShroud {
 		public int topEdgeLoops = 7;
 
 		bool setupFinished = false;
-		ModuleJettison engineShroud;
+		ModuleJettison[] engineShrouds;
 		GameObject shroudGO;
 		Material[] shroudMats;
 		ShroudShaper shroudCylinders;
@@ -80,7 +80,7 @@ namespace DecouplerShroud {
 		Vector3 lastShroudAttachedScale;
 		Vector3 lastShroudAttachedBounds;
 		Part lastShroudAttachedPart;
-		Part lastShroudedPart;
+		Part lastShroudedPart = null;
 
 		DragCubeList starDragCubes;
 
@@ -160,6 +160,10 @@ namespace DecouplerShroud {
 					lastShroudedPart.RemoveShield(this);
 				}
 			}
+			if (HighLogic.LoadedSceneIsEditor) {
+				// Toggle engineShroud if new engine is placed on decoupler
+				setEngineShroudActivity();
+			}
 		}
 
 		void detectRequiredRecalculation() {
@@ -234,24 +238,30 @@ namespace DecouplerShroud {
 
 		//Executes when shroud is enabled/disabled
 		void activeToggled(object arg) {
-			Part topPart = GetShroudedPart();
-			
-			if (topPart != null) {
-				engineShroud = topPart.GetComponent<ModuleJettison>();
-				if (engineShroud != null) {
-					if (shroudEnabled) {
-						turnedOffEngineShroud = engineShroud.shroudHideOverride;
-						engineShroud.shroudHideOverride = true;
-
-					} else {
-						engineShroud.shroudHideOverride = turnedOffEngineShroud;
-
-					}
-				}
-			}
+			setEngineShroudActivity();
 			setButtonActive();
 			detectSize();
 			updateShroud();
+		}
+
+		void setEngineShroudActivity() {
+			Part topPart = GetShroudedPart();
+
+			if (topPart != null) {
+				engineShrouds = topPart.GetComponents<ModuleJettison>();
+				if (engineShrouds.Length > 0) {
+					if (shroudEnabled) {
+						turnedOffEngineShroud = engineShrouds[0].shroudHideOverride;
+						foreach (ModuleJettison engineShroud in engineShrouds) {
+							engineShroud.shroudHideOverride = true;
+						}
+					} else {
+						foreach (ModuleJettison engineShroud in engineShrouds) {
+							engineShroud.shroudHideOverride = turnedOffEngineShroud;
+						}
+					}
+				}
+			}
 		}
 
 		//Enables or disables KSPFields based on values
@@ -439,8 +449,12 @@ namespace DecouplerShroud {
 
 		void partDetached() {
 			destroyShroud();
-			if (engineShroud != null) {
-				engineShroud.shroudHideOverride = turnedOffEngineShroud;
+			if (engineShrouds != null) {
+				if (engineShrouds.Length > 0) {
+					foreach (ModuleJettison engineShroud in engineShrouds) {
+						engineShroud.shroudHideOverride = turnedOffEngineShroud;
+					}
+				}
 			}
 		}
 

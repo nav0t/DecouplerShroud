@@ -20,6 +20,8 @@ namespace DecouplerShroud {
 		public bool autoHeightDivide = false;
 		public float autoWidthStep = 1;
 		public float autoHeightStep = 1;
+		public float autoMinUFactor = 1;
+		public float autoMinVFactor = 1;
 
 		public SurfaceTexture(ConfigNode node) {
 			GameDatabase gdb = GameDatabase.Instance;
@@ -50,6 +52,10 @@ namespace DecouplerShroud {
 			if (node.HasValue("autoHeightStep"))
 				float.TryParse(node.GetValue("autoHeightStep"), out autoHeightStep);
 
+			if (node.HasValue("autoMinUFactor"))
+				float.TryParse(node.GetValue("autoMinUFactor"), out autoMinUFactor);
+			if (node.HasValue("autoMinVFactor"))
+				float.TryParse(node.GetValue("autoMinVFactor"), out autoMinVFactor);
 		}
 
 		public void SetMaterialProperties(Material m, Vector2 size) {
@@ -62,8 +68,8 @@ namespace DecouplerShroud {
 				size /= size.y;
 			}
 			if (autoScale) {
-				size.x = roundScaleToStep(size.x, autoWidthStep);
-				size.y = roundScaleToStep(size.y, autoHeightStep);
+				size.x = roundScaleToStep(size.x, autoWidthStep, autoMinUFactor);
+				size.y = roundScaleToStep(size.y, autoHeightStep, autoMinVFactor);
 				uvScale.Scale(size);
 			}
 
@@ -75,16 +81,21 @@ namespace DecouplerShroud {
 
 			m.SetFloat("_Shininess", shininess);
 			m.SetColor("_SpecColor", specularColor);
-
+			
 		}
 
-		float roundScaleToStep(float s, float step) {
+		float roundScaleToStep(float s, float step, float minScale) {
 			if (step > 0) {
+				
 				s -= 1;
 				s /= step;
 				s = Mathf.Round(s);
 				s *= step;
 				s += 1;
+				
+			}
+			if (s < minScale) {
+				return minScale;
 			}
 			return s;
 		}
