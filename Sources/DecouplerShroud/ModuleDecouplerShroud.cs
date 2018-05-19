@@ -70,6 +70,8 @@ namespace DecouplerShroud {
 		GameObject shroudGO;
 		Material[] shroudMats;
 		ShroudShaper shroudCylinders;
+
+		[KSPField]
 		bool turnedOffEngineShroud;
 
 		//true when decoupler has no grandparent in the editor
@@ -247,6 +249,7 @@ namespace DecouplerShroud {
 			updateShroud();
 		}
 
+		//Disables and reenables stock engine shrouds
 		void setEngineShroudActivity() {
 			Part topPart = GetShroudedPart();
 
