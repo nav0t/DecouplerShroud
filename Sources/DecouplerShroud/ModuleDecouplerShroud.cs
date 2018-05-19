@@ -72,6 +72,9 @@ namespace DecouplerShroud {
 		ShroudShaper shroudCylinders;
 		bool turnedOffEngineShroud;
 
+		//true when decoupler has no grandparent in the editor
+		public bool invisibleShroud;
+
 		//Variables for detecting wheter automatic size needs to be recalculated
 		Vector3 lastPos;
 		Vector3 lastScale;
@@ -322,6 +325,10 @@ namespace DecouplerShroud {
 		void detectSize(object arg) { detectSize(); }
 		void detectSize() {
 
+
+			invisibleShroud = false;
+			
+
 			//Check if the size has to be reset
 			if (!autoDetectSize || !HighLogic.LoadedSceneIsEditor || !part.isAttached || !shroudEnabled) {
 				return;
@@ -427,6 +434,7 @@ namespace DecouplerShroud {
 			} else {
 				//Debug.LogError("Decoupler has no grandparent");
 				height = 0;
+				invisibleShroud = true;
 				topWidth = botWidth;
 			}
 
@@ -492,6 +500,7 @@ namespace DecouplerShroud {
 			}
 			updateTexture();
 			shroudCylinders.update();
+			shroudGO.GetComponent<MeshRenderer>().enabled = !invisibleShroud;
 		}
 
 		//Recalculates the drag cubes for the model
