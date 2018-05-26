@@ -383,6 +383,9 @@ namespace DecouplerShroud {
 			//Get part the shroud is attached to
 			Part shroudAttatchedPart = GetShroudAttachedPart();
 
+			//World Pos of top attach node, or biggest part of meshcollider
+			Vector3 topCenterWorld = Vector3.zero;
+
 			if (shroudAttatchedPart != null) {
 				//Calculate top Width
 				if (shroudAttatchedPart.collider != null) {
@@ -406,7 +409,7 @@ namespace DecouplerShroud {
 							topWidth *= parentTransform.localScale.x;
 							parentTransform = parentTransform.parent;
 						}*/
-						topWidth = getPartRadAtPos(shroudAttatchedPart, GetShroudattachShroudedNodeWorldPos(), part.transform.up, .2f) * 2;
+						topWidth = getPartRadAtPos(shroudAttatchedPart, GetShroudattachShroudedNodeWorldPos(), part.transform.up, .2f, out topCenterWorld) * 2;
 
 						topWidth = TrySnapToSize(topWidth, radialSnapMargin);
 						//Debug.Log("MeshSize: " + mc.sharedMesh.bounds.size.x + ", Scale: " + shroudAttatchedPart.transform.localScale.x+ ", MeshGO Scale" + mc.transform.localScale.x);
@@ -427,6 +430,11 @@ namespace DecouplerShroud {
 
 				//Bring the node position to world space
 				Vector3 nodeWorldPos = shroudAttatchedPart.transform.TransformPoint(targetNode.position);
+
+				//If we got the top from mesh collider
+				if (topCenterWorld != Vector3.zero) {
+					nodeWorldPos = topCenterWorld;
+				}
 
 				//Get local position of nodeWorldPos
 				Vector3 nodeRelativePos = transform.InverseTransformPoint(nodeWorldPos);
@@ -453,7 +461,16 @@ namespace DecouplerShroud {
 		}
 
 		public float getPartRadAtPos(Part p, Vector3 pos, Vector3 nor, float maxDist) {
+			Vector3 a = Vector3.zero;
+			return getPartRadAtPos(p,pos,nor,maxDist, out a);
+		}
+		public float getPartRadAtPos(Part p, Vector3 pos, Vector3 nor, float maxDist, out Vector3 worldPos) {
+
 			MeshCollider mc = p.collider as MeshCollider;
+			if (mc == null) {
+				worldPos = Vector3.zero;
+				return 0;
+			}
 			Vector3 locPos = mc.transform.InverseTransformPoint(pos);
 			Vector3 locNor = mc.transform.InverseTransformVector(nor.normalized);
 			maxDist *= locNor.magnitude;
@@ -463,6 +480,7 @@ namespace DecouplerShroud {
 			Vector3 minV = Vector3.one * 10000;
 			bool inRange = false;
 			Vector3 maxRad = Vector3.zero;
+			worldPos = Vector3.zero;
 			foreach (Vector3 v in mc.sharedMesh.vertices) {
 				Vector3 d = v - locPos;
 				float dist = Vector3.Dot(d, locNor);
@@ -471,6 +489,7 @@ namespace DecouplerShroud {
 					Vector3 rad = (d - dist * locNor);
 					if (rad.magnitude > maxRad.magnitude) {
 						maxRad = rad;
+						worldPos = v - rad;
 					}
 				} else {
 					if (Mathf.Abs(dist) < Vector3.Dot(minV, locNor)) {
@@ -482,6 +501,7 @@ namespace DecouplerShroud {
 				//Debug.Log("None in range "+minV);
 			}
 			//Debug.Log(maxRad+" _ "+mc.transform.TransformVector(maxRad)+"\n");
+			worldPos = mc.transform.TransformPoint(worldPos);
 			return mc.transform.TransformVector(maxRad).magnitude;
 		}
 
