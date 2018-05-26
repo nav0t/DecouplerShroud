@@ -366,6 +366,9 @@ namespace DecouplerShroud {
 							parentTransform = parentTransform.parent;
 						}
 
+
+						botWidth = getPartRadAtPos(part, GetDecouperShroudedNodeWorldPos(), part.transform.up, .2f) * 2;
+
 						botWidth = TrySnapToSize(botWidth, radialSnapMargin);
 						//Debug.Log("MeshSize: " + mc.sharedMesh.bounds.size.x + ", Scale: " + shroudAttatchedPart.transform.localScale.x+ ", MeshGO Scale" + mc.transform.localScale.x);
 					} else {
@@ -394,6 +397,7 @@ namespace DecouplerShroud {
 
 					if (mc != null) {
 						//mc.sharedMesh.RecalculateBounds();
+						/*
 						topWidth = mc.sharedMesh.bounds.size.x * shroudAttatchedPart.transform.localScale.x;
 
 						//Scale width with scale of parent transforms
@@ -401,7 +405,8 @@ namespace DecouplerShroud {
 						while (parentTransform != shroudAttatchedPart.transform && parentTransform != null) {
 							topWidth *= parentTransform.localScale.x;
 							parentTransform = parentTransform.parent;
-						}
+						}*/
+						topWidth = getPartRadAtPos(shroudAttatchedPart, GetShroudattachShroudedNodeWorldPos(), part.transform.up, .2f) * 2;
 
 						topWidth = TrySnapToSize(topWidth, radialSnapMargin);
 						//Debug.Log("MeshSize: " + mc.sharedMesh.bounds.size.x + ", Scale: " + shroudAttatchedPart.transform.localScale.x+ ", MeshGO Scale" + mc.transform.localScale.x);
@@ -440,11 +445,44 @@ namespace DecouplerShroud {
 				invisibleShroud = true;
 				topWidth = botWidth;
 			}
-
+			
 			//Update shroud mesh
 			if (shroudGO != null) {
 				updateShroud();
 			}
+		}
+
+		public float getPartRadAtPos(Part p, Vector3 pos, Vector3 nor, float maxDist) {
+			MeshCollider mc = p.collider as MeshCollider;
+			Vector3 locPos = mc.transform.InverseTransformPoint(pos);
+			Vector3 locNor = mc.transform.InverseTransformVector(nor.normalized);
+			maxDist *= locNor.magnitude;
+			locNor.Normalize();
+			//Debug.Log("getPartSizeAtPos: " + p.name + ", " + locPos + ", "+locNor+", " + nor+", "+mc.sharedMesh.vertices.Length);
+
+			Vector3 minV = Vector3.one * 10000;
+			bool inRange = false;
+			Vector3 maxRad = Vector3.zero;
+			foreach (Vector3 v in mc.sharedMesh.vertices) {
+				Vector3 d = v - locPos;
+				float dist = Vector3.Dot(d, locNor);
+				if (Mathf.Abs(dist) < maxDist) {
+					inRange = true;
+					Vector3 rad = (d - dist * locNor);
+					if (rad.magnitude > maxRad.magnitude) {
+						maxRad = rad;
+					}
+				} else {
+					if (Mathf.Abs(dist) < Vector3.Dot(minV, locNor)) {
+						minV = d;
+					}
+				}
+			}
+			if (!inRange) {
+				//Debug.Log("None in range "+minV);
+			}
+			//Debug.Log(maxRad+" _ "+mc.transform.TransformVector(maxRad)+"\n");
+			return mc.transform.TransformVector(maxRad).magnitude;
 		}
 
 		public float TrySnapToSize(float size, float margin) {
@@ -620,6 +658,18 @@ namespace DecouplerShroud {
 			
 			return shroudAttatchPart;
 
+		}
+
+		Vector3 GetDecouperShroudedNodeWorldPos() {
+			return part.transform.TransformPoint(part.FindAttachNode("top").position);
+		}
+		Vector3 GetShroudattachShroudedNodeWorldPos() {
+			Part attached = GetShroudAttachedPart();
+			AttachNode an = attached.FindAttachNodeByPart(GetShroudedPart());
+			if (an != null) {
+				return attached.transform.TransformPoint(an.position);
+			}
+			return Vector3.zero;
 		}
 
 		public bool ClosedAndLocked() {
