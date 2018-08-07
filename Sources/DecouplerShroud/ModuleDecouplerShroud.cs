@@ -9,8 +9,8 @@ namespace DecouplerShroud {
 	public class ModuleDecouplerShroud : PartModule, IAirstreamShield {
 
 		float[] snapSizes = new float[] { .63f , 1.25f, 2.5f, 3.75f, 5f, 7.5f};
-		int[] segmentCountLUT =   new int[] { 1, 2, 3, 4, 6, 8 , 12};
-		int[] collPerSegmentLUT = new int[] { 12, 6, 4, 3, 2, 1, 1 };
+		int[] segmentCountLUT =   new int[] { 1, 2, 3, 4, 6 };
+		int[] collPerSegmentLUT = new int[] { 12, 6, 4, 3, 2};
 
 		[KSPField(isPersistant = true)]
 		public int nSides = 24;
