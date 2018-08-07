@@ -9,6 +9,8 @@ namespace DecouplerShroud {
 	public class ModuleDecouplerShroud : PartModule, IAirstreamShield {
 
 		float[] snapSizes = new float[] { .63f , 1.25f, 2.5f, 3.75f, 5f, 7.5f};
+		int[] segmentCountLUT =   new int[] { 1, 2, 3, 4, 6, 8 , 12};
+		int[] collPerSegmentLUT = new int[] { 12, 6, 4, 3, 2, 1, 1 };
 
 		[KSPField(isPersistant = true)]
 		public int nSides = 24;
@@ -39,9 +41,14 @@ namespace DecouplerShroud {
 		[UI_FloatEdit(scene = UI_Scene.Editor, minValue = -2f, maxValue = 2f, incrementLarge = .1f, incrementSlide = 0.01f, incrementSmall = 0.01f, unit = "m", sigFigs = 2, useSI = false)]
 		public float vertOffset = 0.0f;
 
+		[KSPField(guiName = "Jettison Mode", isPersistant = true, guiActiveEditor = true, guiActive = false)]
+		[UI_ChooseOption(affectSymCounterparts = UI_Scene.Editor, options = new[] { "Stay", "2 Shells", "3 Shells", "4 Shells", "6 Shells", "8 Shells", "12 Shells" }, scene = UI_Scene.Editor, suppressEditorShipModified = true)]
+		int segmentIndex;
+
 		[KSPField(guiName = "Shroud Texture", isPersistant = false, guiActiveEditor = true, guiActive = false)]
 		[UI_ChooseOption(affectSymCounterparts = UI_Scene.Editor, options = new[] { "None" }, scene = UI_Scene.Editor, suppressEditorShipModified = true)]
 		public int textureIndex;
+
 
 		[KSPField(isPersistant = true)]
 		public string textureName;
@@ -64,6 +71,16 @@ namespace DecouplerShroud {
 		public int outerEdgeLoops = 13;
 		[KSPField(isPersistant = false)]
 		public int topEdgeLoops = 7;
+		[KSPField(isPersistant = false)]
+		public float jettisonVelocity = 1;
+		[KSPField(isPersistant = false)]
+		public bool collisionEnabled; 
+
+
+		[KSPField(isPersistant = true)]
+		public int segments = 1;
+		[KSPField(isPersistant = true)]
+		public int collPerSegment = 1;
 
 		bool setupFinished = false;
 		ModuleJettison[] engineShrouds;
@@ -71,6 +88,8 @@ namespace DecouplerShroud {
 		Material[] shroudMats;
 		ShroudShaper shroudCylinders;
 
+		[KSPField]
+		public bool jettisoned = false;
 		[KSPField]
 		bool turnedOffEngineShroud;
 
@@ -96,10 +115,15 @@ namespace DecouplerShroud {
 				return;
 			}
 
+			segmentIndex = Mathf.Clamp(segmentIndex, 0, segmentCountLUT.Length - 1);
+			segments = segmentCountLUT[segmentIndex];
+			collPerSegment = collPerSegmentLUT[segmentIndex];
+			//Debug.Log("!!set segment count to: " + segments + ", Index: " + segmentIndex);
+
 			starDragCubes = part.DragCubes;
 			getTextureNames();
 			//Remove copied decoupler shroud when copied
-			Transform copiedDecouplerShroud = transform.FindChild("DecouplerShroud");
+			Transform copiedDecouplerShroud = transform.Find("DecouplerShroud");
 			if (copiedDecouplerShroud != null) {
 				Destroy(copiedDecouplerShroud.gameObject);
 				shroudCylinders = null;
@@ -119,6 +143,9 @@ namespace DecouplerShroud {
 			Fields[nameof(thickness)].OnValueModified += updateShroud;
 			Fields[nameof(vertOffset)].OnValueModified += updateShroud;
 			Fields[nameof(textureIndex)].OnValueModified += updateTexture;
+
+			Fields[nameof(segmentIndex)].OnValueModified += segmentUpdate;
+
 
 			setButtonActive();
 
@@ -163,6 +190,9 @@ namespace DecouplerShroud {
 				if (lastShroudedPart != null) {
 					//Debug.Log("shrouded Part Changed! was " + lastShroudedPart + " is " + GetShroudedPart());
 					lastShroudedPart.RemoveShield(this);
+					if (!jettisoned && part.GetComponent<ModuleDecouple>().isDecoupled) {
+						Jettison();
+					}
 				}
 			}
 			if (HighLogic.LoadedSceneIsEditor) {
@@ -216,6 +246,30 @@ namespace DecouplerShroud {
 
 		}
 
+		//Jettisons the shroud
+		[KSPEvent(guiName = "Jettison", guiActive = true, guiActiveEditor = false)]
+		public void Jettison() {
+			Debug.Log("Jettison called on DecouplerShroud of "+part.name);
+
+			if (segments < 2 || !HighLogic.LoadedSceneIsFlight) {
+				return;
+			}
+			Events[nameof(Jettison)].guiActive = false;
+
+			jettisoned = true;
+
+			for (int i = 0; i < shroudGO.transform.childCount; i++) {
+				GameObject c = shroudGO.transform.GetChild(i).gameObject;
+				//c.layer = 19;
+				physicalObject ph = c.AddComponent<physicalObject>();
+				ph.rb = c.AddComponent<Rigidbody>();
+
+				float ang = -Mathf.PI / 2 + 2 * Mathf.PI * (i+.5f) / (float)segments;
+				ph.rb.AddRelativeForce(new Vector3(Mathf.Cos(ang),0,Mathf.Sin(ang)) * jettisonVelocity, ForceMode.VelocityChange);
+			}
+			shroudGO.transform.DetachChildren();
+		}
+
 		//Gets textures from Textures folder and loads them into surfaceTextures list + set Field options
 		void getTextureNames() {
 			if (ShroudTexture.shroudTextures == null) {
@@ -249,6 +303,14 @@ namespace DecouplerShroud {
 			updateShroud();
 		}
 
+		//Executes when amount of segments is changed
+		private void segmentUpdate(object arg1) {
+			segments = segmentCountLUT[segmentIndex];
+			collPerSegment = collPerSegmentLUT[segmentIndex];
+			//Trigger rebuilding of shrouds
+			resetShroudGO();
+		}
+
 		//Disables and reenables stock engine shrouds
 		void setEngineShroudActivity() {
 			Part topPart = GetShroudedPart();
@@ -276,10 +338,12 @@ namespace DecouplerShroud {
 
 			if (shroudEnabled) {
 				Fields[nameof(autoDetectSize)].guiActiveEditor = true;
+				Fields[nameof(segmentIndex)].guiActiveEditor = true;
 				Fields[nameof(textureIndex)].guiActiveEditor = true;
 
 			} else {
 				Fields[nameof(autoDetectSize)].guiActiveEditor = false;
+				Fields[nameof(segmentIndex)].guiActiveEditor = false;
 				Fields[nameof(textureIndex)].guiActiveEditor = false;
 
 			}
@@ -297,6 +361,8 @@ namespace DecouplerShroud {
 				Fields[nameof(thickness)].guiActiveEditor = false;
 			}
 
+			Events[nameof(Jettison)].guiActive = !jettisoned && shroudEnabled && (segments > 1);
+			Debug.Log("set jettison gui to: "+ (!jettisoned && shroudEnabled && (segments > 1)) +", "+jettisoned+", "+shroudEnabled+", "+(segments>1)+", "+segments);
 		}
 
 		void updateTexture(object arg) { updateTexture(); }
@@ -314,7 +380,9 @@ namespace DecouplerShroud {
 			shroudTex.textures[1].SetMaterialProperties(shroudMats[1], topSize);
 			shroudTex.textures[2].SetMaterialProperties(shroudMats[2], sideSize);
 
-			shroudGO.GetComponent<Renderer>().materials = shroudMats;
+			foreach (Renderer r in shroudGO.GetComponentsInChildren<Renderer>()) {
+				r.materials = shroudMats;
+			}
 		}
 
 		void partReattached() {
@@ -561,7 +629,7 @@ namespace DecouplerShroud {
 			}
 			updateTexture();
 			shroudCylinders.update();
-			shroudGO.GetComponent<MeshRenderer>().enabled = !invisibleShroud;
+			shroudGO.SetActive(!invisibleShroud);
 		}
 
 		//Recalculates the drag cubes for the model
@@ -575,7 +643,12 @@ namespace DecouplerShroud {
 				part.DragCubes.ResetCubeWeights();
 
 			}
+		}
 
+		//Replaces current shroudGO with a new one (called when making changes to num of segments, ...)
+		void resetShroudGO() {
+			destroyShroud();
+			createShroudGO();
 		}
 
 		//Create the gameObject with the meshrenderer
@@ -596,15 +669,38 @@ namespace DecouplerShroud {
 			shroudGO.transform.parent = transform;
 			shroudGO.transform.localPosition = topNode.position;
 			shroudGO.transform.localRotation = Quaternion.identity;
-			shroudGO.AddComponent<MeshFilter>().sharedMesh = shroudCylinders.multiCylinder.mesh;
 
 			if (shroudMats != null) {
 				foreach(Material mat in shroudMats) {
 					Destroy(mat);
 				}
 			}
-			shroudGO.AddComponent<MeshRenderer>();
 
+			//Create Segment GameObjects
+			for (int i = 0; i < segments; i++) {
+				GameObject segment = new GameObject("ShroudSegment");
+				segment.transform.parent = shroudGO.transform;
+				segment.transform.localPosition = Vector3.zero;
+				segment.transform.localRotation = Quaternion.identity;
+				segment.AddComponent<MeshFilter>().sharedMesh = shroudCylinders.multiCylinder.meshes[i];
+				segment.AddComponent<MeshRenderer>();
+
+				//Create Gameobjects with meshColliders if collisionEnabled
+				if (collisionEnabled) {
+					for (int j = 0; j < collPerSegment; j++) {
+						GameObject segColl = new GameObject("SegColl");
+						segColl.transform.parent = segment.transform;
+						segColl.transform.localPosition = Vector3.zero;
+						segColl.transform.localRotation = Quaternion.identity;
+						segColl.AddComponent<MeshCollider>();
+						segColl.GetComponent<MeshCollider>().sharedMesh = shroudCylinders.collCylinder.meshes[i * collPerSegment + j];
+						segColl.GetComponent<MeshCollider>().convex = true;
+
+						//segColl.AddComponent<MeshFilter>().sharedMesh = shroudCylinders.collCylinder.meshes[i * collPerSegment + j];
+						//segColl.AddComponent<MeshRenderer>();
+					}
+				}
+			}
 			//Setup materials
 			CreateMaterials();
 			updateTexture();

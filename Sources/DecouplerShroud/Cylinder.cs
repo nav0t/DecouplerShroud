@@ -18,6 +18,9 @@ namespace DecouplerShroud {
 		public int submesh = 0;
 		public int rings = 2;
 
+		public float segments = 1;
+		public float startDeg = 0;
+
 		public Cylinder(int sides) {
 			this.sides = sides;
 		}
@@ -26,13 +29,12 @@ namespace DecouplerShroud {
 		public void UpdateCylinder(int ringOffset, Vector3[] verts, Vector3[] nors, Vector4[] tans, Vector2[] uvs) {
 
 			//Last vert needs to be done twice for uv coords
-			int res = sides + 1;
+			int res = Mathf.RoundToInt(sides / (float)segments) + 1;
 
 			int vertOffset = ringOffset * res;
 
 			for (int i = 0; i < res; i++) {
-				float uVal = i / (float)(sides);
-
+				float uVal = startDeg + i / (float)(sides);
 
 				float ang = uVal * 2 * Mathf.PI;
 
@@ -65,12 +67,12 @@ namespace DecouplerShroud {
 		public void GenerateCylinders(int ringOffset, Vector3[] verts, Vector3[] nors, Vector4[] tans, Vector2[] uvs, List<int>[] tris) {
 
 			//Last vert needs to be done twice for uv coords
-			int res = sides + 1;
+			int res = Mathf.RoundToInt(sides / segments) + 1;
 			int vertOffset = ringOffset * res;
 
 			for (int i = 0; i < res; i++) {
 
-				float uVal = i / (float)(sides);
+				float uVal = startDeg + i / (float)(sides);
 
 				float ang = uVal * 2 * Mathf.PI;
 
