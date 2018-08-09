@@ -19,8 +19,8 @@ namespace DecouplerShroud {
 		public ShroudShaper(ModuleDecouplerShroud decouplerShroud, int sides) {
 			this.sides = sides;
 			this.decouplerShroud = decouplerShroud;
-			multiCylinder = new MultiCylinder(sides, 6, 3);
-			collCylinder = new MultiCylinder(sides, 2, 1);
+			multiCylinder = new MultiCylinder(sides, 6, 3, true);
+			collCylinder = new MultiCylinder(sides, 2, 1, false);
 		}
 		
 		void getDecouplerShroudValues() {
@@ -62,12 +62,12 @@ namespace DecouplerShroud {
 
 			float maxWidth = (topWidth > botWidth) ? topWidth : botWidth;
 			float widthDiff = (topWidth > botWidth) ? topWidth - botWidth : botWidth - topWidth;
-			Cylinder c0 = multiCylinder.cylinders[0]; //outside shell
-			Cylinder c1 = multiCylinder.cylinders[1]; //top flat bit
-			Cylinder c2 = multiCylinder.cylinders[2]; //inside
-			Cylinder c3 = multiCylinder.cylinders[3]; //bottom tucked in edge
-			Cylinder c4 = multiCylinder.cylinders[4]; //top bevel in edge
-			Cylinder c5 = multiCylinder.cylinders[5]; //bottom flat
+			Cylinder cout = multiCylinder.cylinders[0]; //outside shell
+			Cylinder ctopBevel = multiCylinder.cylinders[5]; //top bevel in edge
+			Cylinder ctop = multiCylinder.cylinders[4]; //top flat bit
+			Cylinder inside = multiCylinder.cylinders[3]; //inside
+			Cylinder cbot = multiCylinder.cylinders[2]; //bottom flat
+			Cylinder cBotBevel = multiCylinder.cylinders[1]; //bottom tucked in edge
 
 			Cylinder coll0 = collCylinder.cylinders[0];//Collision outer
 			Cylinder coll1 = collCylinder.cylinders[1];//Collision inner
@@ -76,64 +76,64 @@ namespace DecouplerShroud {
 			bevel = bevel.normalized * topBevelSize;
 
 			//Creates bottom edge
-			c3.submesh = 0;
-			c3.bottomStart = vertOffset - bottomEdgeSize;
-			c3.height = bottomEdgeSize;
-			c3.botWidth = botWidth - bottomEdgeSize;
-			c3.topWidth = botWidth;
-			c3.uvBot = 0;
-			c3.uvTop = .01f;
+			cBotBevel.submesh = 0;
+			cBotBevel.bottomStart = vertOffset - bottomEdgeSize;
+			cBotBevel.height = bottomEdgeSize;
+			cBotBevel.botWidth = botWidth - bottomEdgeSize;
+			cBotBevel.topWidth = botWidth;
+			cBotBevel.uvBot = 0;
+			cBotBevel.uvTop = .01f;
 
 			//Sets outer shell values
-			c0.submesh = 0;
-			c0.bottomStart = vertOffset;
-			c0.height = height - bevel.y;
-			c0.botWidth = botWidth;
-			c0.topWidth = topWidth;
-			c0.uvBot = 0.01f;
-			c0.uvTop = 1 - .01f;
-			c0.rings = outerEdgeLoops;
+			cout.submesh = 0;
+			cout.bottomStart = vertOffset;
+			cout.height = height - bevel.y;
+			cout.botWidth = botWidth;
+			cout.topWidth = topWidth;
+			cout.uvBot = 0.01f;
+			cout.uvTop = 1 - .01f;
+			cout.rings = outerEdgeLoops;
 			//c0.uvTop = (height) / (6*maxWidth / c0.tiling);
 			//if (c0.uvTop > 240 / 512f) {
 			//}
 
 			//Set top Bevel 
-			c4.submesh = 0;
-			c4.bottomStart = vertOffset + height - bevel.y;
-			c4.height = bevel.y;
-			c4.botWidth = topWidth;
-			c4.topWidth = topWidth - bevel.x;
-			c4.uvBot = 1 - .01f;
-			c4.uvTop = 1;
+			ctopBevel.submesh = 0;
+			ctopBevel.bottomStart = vertOffset + height - bevel.y;
+			ctopBevel.height = bevel.y;
+			ctopBevel.botWidth = topWidth;
+			ctopBevel.topWidth = topWidth - bevel.x;
+			ctopBevel.uvBot = 1 - .01f;
+			ctopBevel.uvTop = 1;
 
 			//Sets top bit values
-			c1.submesh = 1;
-			c1.bottomStart = vertOffset + height;
-			c1.height = 0;
-			c1.botWidth = topWidth - bevel.x;
-			c1.topWidth = (topWidth - bevel.x) - thickness * topWidth;
-			c1.uvBot = 0;
-			c1.uvTop = 1;
-			c1.rings = topEdgeLoops;
+			ctop.submesh = 1;
+			ctop.bottomStart = vertOffset + height;
+			ctop.height = 0;
+			ctop.botWidth = topWidth - bevel.x;
+			ctop.topWidth = (topWidth - bevel.x) - thickness * topWidth;
+			ctop.uvBot = 0;
+			ctop.uvTop = 1;
+			ctop.rings = topEdgeLoops;
 
 			//Sets bottom flat bit
-			c5.submesh = 1;
-			c5.bottomStart = vertOffset - bottomEdgeSize;
-			c5.height = 0;
-			c5.topWidth = botWidth - bottomEdgeSize;
-			c5.botWidth = Mathf.Min(botWidth - thickness * topWidth, botWidth - bottomEdgeSize);
-			c5.uvBot = 0;
-			c5.uvTop = 1;
-			c5.rings = topEdgeLoops;
+			cbot.submesh = 1;
+			cbot.bottomStart = vertOffset - bottomEdgeSize;
+			cbot.height = 0;
+			cbot.topWidth = botWidth - bottomEdgeSize;
+			cbot.botWidth = Mathf.Min(botWidth - thickness * topWidth, botWidth - bottomEdgeSize);
+			cbot.uvBot = 0;
+			cbot.uvTop = 1;
+			cbot.rings = topEdgeLoops;
 
 			//Sets inner shell values
-			c2.submesh = 2;
-			c2.bottomStart = vertOffset + height;
-			c2.height = -height - bottomEdgeSize;
-			c2.botWidth = topWidth - thickness * topWidth;
-			c2.topWidth = Mathf.Min(botWidth - thickness * topWidth, botWidth - bottomEdgeSize);
-			c2.uvBot = 0;
-			c2.uvTop = 1;
+			inside.submesh = 2;
+			inside.bottomStart = vertOffset + height;
+			inside.height = -height - bottomEdgeSize;
+			inside.botWidth = topWidth - thickness * topWidth;
+			inside.topWidth = Mathf.Min(botWidth - thickness * topWidth, botWidth - bottomEdgeSize);
+			inside.uvBot = 0;
+			inside.uvTop = 1;
 
 			coll0.submesh = 0;
 			coll0.bottomStart = vertOffset;

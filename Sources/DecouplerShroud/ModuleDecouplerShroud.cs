@@ -362,7 +362,7 @@ namespace DecouplerShroud {
 			}
 
 			Events[nameof(Jettison)].guiActive = !jettisoned && shroudEnabled && (segments > 1);
-			Debug.Log("set jettison gui to: "+ (!jettisoned && shroudEnabled && (segments > 1)) +", "+jettisoned+", "+shroudEnabled+", "+(segments>1)+", "+segments);
+			//Debug.Log("set jettison gui to: "+ (!jettisoned && shroudEnabled && (segments > 1)) +", "+jettisoned+", "+shroudEnabled+", "+(segments>1)+", "+segments);
 		}
 
 		void updateTexture(object arg) { updateTexture(); }
