@@ -19,7 +19,7 @@ namespace DecouplerShroud {
 		public int rings = 2;
 
 		public float segments = 1;
-		public float startDeg = 0;
+		public float startUVal = 0;
 
 		public Cylinder(int sides) {
 			this.sides = sides;
@@ -34,7 +34,7 @@ namespace DecouplerShroud {
 			int vertOffset = ringOffset * res;
 
 			for (int i = 0; i < res; i++) {
-				float uVal = startDeg + i / (float)(sides);
+				float uVal = startUVal + i / (float)(sides);
 
 				float ang = uVal * 2 * Mathf.PI;
 
@@ -72,7 +72,7 @@ namespace DecouplerShroud {
 
 			for (int i = 0; i < res; i++) {
 
-				float uVal = startDeg + i / (float)(sides);
+				float uVal = startUVal + i / (float)(sides);
 
 				float ang = uVal * 2 * Mathf.PI;
 

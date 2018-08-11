@@ -42,7 +42,7 @@ namespace DecouplerShroud {
 		public void generate() {
 			setCylinderValues();
 			multiCylinder.generateMeshes();
-			collCylinder.generateMeshes();
+			//collCylinder.generateMeshes();
 		}
 
 		public void update() {
@@ -50,7 +50,7 @@ namespace DecouplerShroud {
 
 			//Updates mesh
 			multiCylinder.updateMeshes();
-			collCylinder.updateMeshes();
+			//collCylinder.updateMeshes();
 
 		}
 

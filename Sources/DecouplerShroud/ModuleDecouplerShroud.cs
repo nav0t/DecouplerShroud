@@ -42,7 +42,7 @@ namespace DecouplerShroud {
 		public float vertOffset = 0.0f;
 
 		[KSPField(guiName = "Jettison Mode", isPersistant = true, guiActiveEditor = true, guiActive = false)]
-		[UI_ChooseOption(affectSymCounterparts = UI_Scene.Editor, options = new[] { "Stay", "2 Shells", "3 Shells", "4 Shells", "6 Shells", "8 Shells", "12 Shells" }, scene = UI_Scene.Editor, suppressEditorShipModified = true)]
+		[UI_ChooseOption(affectSymCounterparts = UI_Scene.Editor, options = new[] { "Stay", "2 Shells", "3 Shells", "4 Shells", "6 Shells" }, scene = UI_Scene.Editor, suppressEditorShipModified = true)]
 		int segmentIndex;
 
 		[KSPField(guiName = "Shroud Texture", isPersistant = false, guiActiveEditor = true, guiActive = false)]
@@ -74,8 +74,9 @@ namespace DecouplerShroud {
 		[KSPField(isPersistant = false)]
 		public float jettisonVelocity = 1;
 		[KSPField(isPersistant = false)]
-		public bool collisionEnabled; 
-
+		public bool collisionEnabled;
+		[KSPField(isPersistant = false)]
+		public float editorMinAlpha = .2f;
 
 		[KSPField(isPersistant = true)]
 		public int segments = 1;
@@ -86,12 +87,16 @@ namespace DecouplerShroud {
 		ModuleJettison[] engineShrouds;
 		GameObject shroudGO;
 		Material[] shroudMats;
-		ShroudShaper shroudCylinders;
+		ShroudShaper shroudShaper;
 
 		[KSPField]
 		public bool jettisoned = false;
 		[KSPField]
 		bool turnedOffEngineShroud;
+
+		//Needed to call updateTexture a few times after changing segment count
+		//otherwise the transparency of the outside shroud is constant for some reason
+		int Fix_SegmentChangedCallUpdateTexture = 0;
 
 		//true when decoupler has no grandparent in the editor
 		public bool invisibleShroud;
@@ -126,7 +131,7 @@ namespace DecouplerShroud {
 			Transform copiedDecouplerShroud = transform.Find("DecouplerShroud");
 			if (copiedDecouplerShroud != null) {
 				Destroy(copiedDecouplerShroud.gameObject);
-				shroudCylinders = null;
+				shroudShaper = null;
 			}
 
 			//Set up events
@@ -150,16 +155,20 @@ namespace DecouplerShroud {
 			setButtonActive();
 
 			if (HighLogic.LoadedSceneIsFlight) {
-				createShroudGO();
-				if (GetShroudedPart() != null && shroudEnabled) {
-					GetShroudedPart().AddShield(this);
+				if (part.isAttached) {
+					createNewShroudGO();
+					if (GetShroudedPart() != null && shroudEnabled) {
+						GetShroudedPart().AddShield(this);
+					}
 				}
 			} else {
 				if (part.isAttached) {
-					createShroudGO();
+					createNewShroudGO();
 				}
 			}
-			detectSize();
+
+			//detectSize();
+
 			setupFinished = true;
 		}
 
@@ -175,6 +184,8 @@ namespace DecouplerShroud {
 			if (HighLogic.LoadedSceneIsEditor) {
 				if (part.isAttached && shroudEnabled) {
 					detectRequiredRecalculation();
+					UpdateMaterialsOpacity();
+
 				}
 			}
 
@@ -184,6 +195,7 @@ namespace DecouplerShroud {
 			}
 
 		}
+
 
 		void onShroudedPartChanged() {
 			if (HighLogic.LoadedSceneIsFlight) {
@@ -308,7 +320,8 @@ namespace DecouplerShroud {
 			segments = segmentCountLUT[segmentIndex];
 			collPerSegment = collPerSegmentLUT[segmentIndex];
 			//Trigger rebuilding of shrouds
-			resetShroudGO();
+			createNewShroudGO();
+
 		}
 
 		//Disables and reenables stock engine shrouds
@@ -380,6 +393,9 @@ namespace DecouplerShroud {
 			shroudTex.textures[1].SetMaterialProperties(shroudMats[1], topSize);
 			shroudTex.textures[2].SetMaterialProperties(shroudMats[2], sideSize);
 
+			if (shroudGO == null) {
+				return;
+			}
 			foreach (Renderer r in shroudGO.GetComponentsInChildren<Renderer>()) {
 				r.materials = shroudMats;
 			}
@@ -388,7 +404,7 @@ namespace DecouplerShroud {
 		void partReattached() {
 			detectSize();
 			if (shroudGO == null)
-				createShroudGO();
+				createNewShroudGO();
 			
 		}
 
@@ -604,18 +620,20 @@ namespace DecouplerShroud {
 				Destroy(shroudGO);
 			}
 			if (shroudMats != null) {
-				foreach (Material mat in shroudMats) {
-					if (mat != null) {
-						Destroy(mat);
+				for (int i = 0; i < shroudMats.Length; i++) {
+					if (shroudMats[i] != null) {
+						Destroy(shroudMats[i]);
 					}
 				}
 			}
+			shroudGO = null;
+			shroudMats = null;
 		}
 
 		//Generates the shroud for the first time
 		void generateShroud() {
-			shroudCylinders = new ShroudShaper(this, nSides);
-			shroudCylinders.generate();
+			shroudShaper = new ShroudShaper(this, nSides);
+			shroudShaper.generate();
 		}
 
 		//updates the shroud mesh when values changed
@@ -624,11 +642,11 @@ namespace DecouplerShroud {
 			if (!shroudEnabled) {
 				destroyShroud();
 			}
-			if (shroudGO == null || shroudCylinders == null) {
-				createShroudGO();
+			if (shroudGO == null || shroudShaper == null) {
+				createNewShroudGO();
 			}
 			updateTexture();
-			shroudCylinders.update();
+			shroudShaper.update();
 			shroudGO.SetActive(!invisibleShroud);
 		}
 
@@ -645,14 +663,8 @@ namespace DecouplerShroud {
 			}
 		}
 
-		//Replaces current shroudGO with a new one (called when making changes to num of segments, ...)
-		void resetShroudGO() {
-			destroyShroud();
-			createShroudGO();
-		}
-
 		//Create the gameObject with the meshrenderer
-		void createShroudGO() {
+		void createNewShroudGO() {
 			if (!shroudEnabled) {
 				return;
 			}
@@ -675,15 +687,19 @@ namespace DecouplerShroud {
 					Destroy(mat);
 				}
 			}
+			shroudMats = null;
 
 			//Create Segment GameObjects
 			for (int i = 0; i < segments; i++) {
-				GameObject segment = new GameObject("ShroudSegment");
+				GameObject segment = new GameObject("ShroudSegment: "+i);
 				segment.transform.parent = shroudGO.transform;
 				segment.transform.localPosition = Vector3.zero;
 				segment.transform.localRotation = Quaternion.identity;
-				segment.AddComponent<MeshFilter>().sharedMesh = shroudCylinders.multiCylinder.meshes[i];
+				segment.AddComponent<MeshFilter>().mesh = shroudShaper.multiCylinder.meshes[i];
 				segment.AddComponent<MeshRenderer>();
+
+				//Don't Remove! Otherwise all the segments will have the uvs of the last segment for some reason!?
+				Vector2[] heisenBugFix = segment.GetComponent<MeshFilter>().mesh.uv;
 
 				//Create Gameobjects with meshColliders if collisionEnabled
 				if (collisionEnabled) {
@@ -693,7 +709,7 @@ namespace DecouplerShroud {
 						segColl.transform.localPosition = Vector3.zero;
 						segColl.transform.localRotation = Quaternion.identity;
 						segColl.AddComponent<MeshCollider>();
-						segColl.GetComponent<MeshCollider>().sharedMesh = shroudCylinders.collCylinder.meshes[i * collPerSegment + j];
+						segColl.GetComponent<MeshCollider>().sharedMesh = shroudShaper.collCylinder.meshes[i * collPerSegment + j];
 						segColl.GetComponent<MeshCollider>().convex = true;
 
 						//segColl.AddComponent<MeshFilter>().sharedMesh = shroudCylinders.collCylinder.meshes[i * collPerSegment + j];
@@ -705,23 +721,65 @@ namespace DecouplerShroud {
 			CreateMaterials();
 			updateTexture();
 
+			Fix_SegmentChangedCallUpdateTexture = 5;
+
 			generateDragCube();
 		}
 
 		//Creates the material for the mesh
 		void CreateMaterials() {
 			shroudMats = new Material[3];
-			for (int i = 0; i < shroudMats.Length; i++) {
-				shroudMats[i] = new Material(Shader.Find("KSP/Bumped Specular"));
+			Shader s = null;
+			if (HighLogic.LoadedSceneIsEditor) {
+				s = Shader.Find("KSP/Bumped Specular");
+			} else {
+				s = Shader.Find("KSP/Bumped Specular (Transparent)");
 			}
 
+			for (int i = 0; i < shroudMats.Length; i++) {
+
+				shroudMats[i] = new Material(s);
+				shroudMats[i].name = "shroudMat: " + i + ", " + segments + " segments";
+
+				if (HighLogic.LoadedSceneIsEditor) {
+					shroudMats[i].renderQueue = 3000;
+				}
+			}
+
+		}
+
+		void UpdateMaterialsOpacity() {
+			if (!HighLogic.LoadedSceneIsEditor || shroudMats == null) {
+				return;
+			}
+
+			//Ugly Fix
+			if (--Fix_SegmentChangedCallUpdateTexture > 0) {
+				updateTexture();
+			}
+
+			float alpha = distPointRay(transform.TransformPoint((vertOffset + height) / 2f * Vector3.up),Camera.main.ScreenPointToRay(Input.mousePosition)) / (botWidth + topWidth + height) * 2;
+			alpha = Mathf.Clamp(alpha, editorMinAlpha, 1);
+
+			foreach (Material m in shroudMats) {
+				if (m == null) {
+					Debug.LogWarning("DecouplerShroud: Material in shroudMats is null");
+					continue;
+				}
+				m.SetFloat("_Opacity", alpha);
+				
+			}
+		}
+
+		float distPointRay(Vector3 p, Ray r) {
+			return Vector3.Cross(r.direction, p - r.origin).magnitude / r.direction.magnitude;
 		}
 
 		bool destroyShroudIfNoTopNode() {
 			AttachNode topNode = part.FindAttachNode("top");
 			if (topNode == null) {
-				Debug.LogError("Decoupler is missing top node!");
-				Debug.LogError("Removing Decouplershroud from part: "+part.name);
+				Debug.LogError("DecouplerShroud: Decoupler is missing top node!");
+				Debug.LogError("DecouplerShroud: Removing Decouplershroud from part: "+part.name);
 				part.RemoveModule(this);
 				Destroy(this);
 				return true;

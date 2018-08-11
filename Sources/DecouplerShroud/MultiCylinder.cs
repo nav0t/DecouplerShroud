@@ -45,7 +45,10 @@ namespace DecouplerShroud {
 			setupMeshes();
 			for (int i = 0; i < segments; i++) {
 				GenerateCylinders(i);
+
 			}
+
+			
 		}
 		public void updateMeshes() {
 			for (int i = 0; i < segments; i++) {
@@ -62,7 +65,7 @@ namespace DecouplerShroud {
 
 			foreach (Cylinder c in cylinders) {
 				c.segments = segments;
-				c.startDeg = -.25f + (segmentIndex) / (float)segments;
+				c.startUVal = -.25f + (segmentIndex) / (float)segments;
 				ringCount += c.rings;
 			}
 
@@ -96,12 +99,12 @@ namespace DecouplerShroud {
 
 			//Assign arrays to mesh
 			mesh.vertices = verts;
-			for (int i = 0; i < subMeshCount; i++) {
-				mesh.SetTriangles(tris[i], i);
-			}
 			mesh.uv = uvs;
 			mesh.normals = nors;
 			mesh.tangents = tans;
+			for (int i = 0; i < subMeshCount; i++) {
+				mesh.SetTriangles(tris[i], i);
+			}
 			mesh.RecalculateBounds();
 		}
 
@@ -116,7 +119,7 @@ namespace DecouplerShroud {
 			int ringOffset = 0;
 			for (int i = 0; i < cylinders.Length; i++) {
 				cylinders[i].segments = segments;
-				cylinders[i].startDeg = -.25f + (segmentIndex) / (float)segments;
+				cylinders[i].startUVal = -.25f + (segmentIndex) / (float)segments;
 
 				cylinders[i].UpdateCylinder(ringOffset, verts, nors, tans, uvs);
 				ringOffset += cylinders[i].rings;
@@ -144,9 +147,12 @@ namespace DecouplerShroud {
 			for (int i = 0; i < vCount; i++) {
 				nors[vStart1 + i] = new Vector3(Mathf.Cos(ang1), 0, -Mathf.Sin(ang1));
 				nors[vStart2 + i] = -new Vector3(Mathf.Cos(ang2), 0, -Mathf.Sin(ang2));
+				uvs[vStart1 + i] = new Vector2(.112f,.123f);
+				uvs[vStart2 + i] = new Vector2(.112f, .123f);
+
 			}
 
-			
+
 			for (int i = 0; i < (vCount+1) / 2 - 1; i++) {
 				tris.Add(vStart1 + ((vCount - i) % vCount));
 				tris.Add(vStart1 + i + 1);
