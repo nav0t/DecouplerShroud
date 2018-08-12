@@ -89,7 +89,7 @@ namespace DecouplerShroud {
 		Material[] shroudMats;
 		ShroudShaper shroudShaper;
 
-		[KSPField]
+		[KSPField(isPersistant = true)]
 		public bool jettisoned = false;
 		[KSPField]
 		bool turnedOffEngineShroud;
@@ -666,7 +666,7 @@ namespace DecouplerShroud {
 
 		//Create the gameObject with the meshrenderer
 		void createNewShroudGO() {
-			if (!shroudEnabled) {
+			if (!shroudEnabled || jettisoned) {
 				return;
 			}
 
