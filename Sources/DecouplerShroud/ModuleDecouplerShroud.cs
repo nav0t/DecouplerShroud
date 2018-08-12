@@ -209,6 +209,7 @@ namespace DecouplerShroud {
 			}
 			if (HighLogic.LoadedSceneIsEditor) {
 				// Toggle engineShroud if new engine is placed on decoupler
+				detectSize();
 				setEngineShroudActivity();
 			}
 		}
@@ -697,9 +698,6 @@ namespace DecouplerShroud {
 				segment.transform.localRotation = Quaternion.identity;
 				segment.AddComponent<MeshFilter>().mesh = shroudShaper.multiCylinder.meshes[i];
 				segment.AddComponent<MeshRenderer>();
-
-				//Don't Remove! Otherwise all the segments will have the uvs of the last segment for some reason!?
-				Vector2[] heisenBugFix = segment.GetComponent<MeshFilter>().mesh.uv;
 
 				//Create Gameobjects with meshColliders if collisionEnabled
 				if (collisionEnabled) {

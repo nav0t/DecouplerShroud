@@ -121,7 +121,7 @@ namespace DecouplerShroud {
 				cylinders[i].segments = segments;
 				cylinders[i].startUVal = -.25f + (segmentIndex) / (float)segments;
 
-				cylinders[i].UpdateCylinder(ringOffset, verts, nors, tans, uvs);
+				cylinders[i].UpdateCylinder(ringOffset, verts, nors, tans);
 				ringOffset += cylinders[i].rings;
 			}
 
@@ -133,7 +133,6 @@ namespace DecouplerShroud {
 			}
 
 			mesh.vertices = verts;
-			mesh.uv = uvs;
 			mesh.normals = nors;
 			mesh.tangents = tans;
 			mesh.RecalculateBounds();

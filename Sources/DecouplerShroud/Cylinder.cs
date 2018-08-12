@@ -26,7 +26,7 @@ namespace DecouplerShroud {
 		}
 
 		//Basically the same as GenerateCylinders but without triangle generation
-		public void UpdateCylinder(int ringOffset, Vector3[] verts, Vector3[] nors, Vector4[] tans, Vector2[] uvs) {
+		public void UpdateCylinder(int ringOffset, Vector3[] verts, Vector3[] nors, Vector4[] tans) {
 
 			//Last vert needs to be done twice for uv coords
 			int res = Mathf.RoundToInt(sides / (float)segments) + 1;
