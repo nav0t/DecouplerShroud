@@ -76,6 +76,8 @@ namespace DecouplerShroud {
 		[KSPField(isPersistant = false)]
 		public bool collisionEnabled;
 		[KSPField(isPersistant = false)]
+		public float collisionThickness = 1;
+		[KSPField(isPersistant = false)]
 		public float editorMinAlpha = .2f;
 
 		[KSPField(isPersistant = true)]
@@ -112,6 +114,7 @@ namespace DecouplerShroud {
 		Part lastShroudedPart = null;
 
 		DragCubeList starDragCubes;
+
 
 		public void setup() {
 
@@ -273,7 +276,7 @@ namespace DecouplerShroud {
 
 			for (int i = 0; i < shroudGO.transform.childCount; i++) {
 				GameObject c = shroudGO.transform.GetChild(i).gameObject;
-				//c.layer = 19;
+				c.layer = 19;
 				physicalObject ph = c.AddComponent<physicalObject>();
 				ph.rb = c.AddComponent<Rigidbody>();
 
@@ -649,6 +652,15 @@ namespace DecouplerShroud {
 			updateTexture();
 			shroudShaper.update();
 			shroudGO.SetActive(!invisibleShroud);
+
+			//Update collision meshes
+			if (collisionEnabled && HighLogic.LoadedSceneIsFlight) {
+				foreach (MeshCollider mc in shroudGO.GetComponentsInChildren<MeshCollider>()) {
+					int index = int.Parse(mc.gameObject.name.Substring("SegColl: ".Length));
+					Debug.Log(mc.gameObject.name + ";" +index);
+					mc.sharedMesh = shroudShaper.collCylinder.meshes[index];
+				}
+			}
 		}
 
 		//Recalculates the drag cubes for the model
@@ -700,17 +712,17 @@ namespace DecouplerShroud {
 				segment.AddComponent<MeshRenderer>();
 
 				//Create Gameobjects with meshColliders if collisionEnabled
-				if (collisionEnabled) {
+				if (collisionEnabled && HighLogic.LoadedSceneIsFlight) {
 					for (int j = 0; j < collPerSegment; j++) {
-						GameObject segColl = new GameObject("SegColl");
+						GameObject segColl = new GameObject("SegColl: "+ (i * collPerSegment + j));
 						segColl.transform.parent = segment.transform;
 						segColl.transform.localPosition = Vector3.zero;
 						segColl.transform.localRotation = Quaternion.identity;
 						segColl.AddComponent<MeshCollider>();
-						segColl.GetComponent<MeshCollider>().sharedMesh = shroudShaper.collCylinder.meshes[i * collPerSegment + j];
 						segColl.GetComponent<MeshCollider>().convex = true;
+						segColl.GetComponent<MeshCollider>().sharedMesh = shroudShaper.collCylinder.meshes[i * collPerSegment + j];
 
-						//segColl.AddComponent<MeshFilter>().sharedMesh = shroudCylinders.collCylinder.meshes[i * collPerSegment + j];
+						//segColl.AddComponent<MeshFilter>().sharedMesh = segColl.GetComponent<MeshCollider>().sharedMesh;
 						//segColl.AddComponent<MeshRenderer>();
 					}
 				}

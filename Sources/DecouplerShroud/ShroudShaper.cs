@@ -13,7 +13,7 @@ namespace DecouplerShroud {
 		public MultiCylinder collCylinder;
 
 		ModuleDecouplerShroud decouplerShroud;
-		float vertOffset, height, botWidth, topWidth, thickness, bottomEdgeSize, topBevelSize, antiZFightSizeIncrease;
+		float vertOffset, height, botWidth, topWidth, thickness, bottomEdgeSize, topBevelSize, antiZFightSizeIncrease, collisionThickness;
 		int outerEdgeLoops, topEdgeLoops;
 
 		public ShroudShaper(ModuleDecouplerShroud decouplerShroud, int sides) {
@@ -34,6 +34,7 @@ namespace DecouplerShroud {
 			this.antiZFightSizeIncrease = decouplerShroud.antiZFightSizeIncrease;
 			this.outerEdgeLoops = decouplerShroud.outerEdgeLoops;
 			this.topEdgeLoops = decouplerShroud.topEdgeLoops;
+			this.collisionThickness = decouplerShroud.collisionThickness;
 
 			multiCylinder.segments = decouplerShroud.segments;
 			collCylinder.segments = decouplerShroud.segments * decouplerShroud.collPerSegment;
@@ -42,7 +43,7 @@ namespace DecouplerShroud {
 		public void generate() {
 			setCylinderValues();
 			multiCylinder.generateMeshes();
-			//collCylinder.generateMeshes();
+			collCylinder.generateMeshes();
 		}
 
 		public void update() {
@@ -50,7 +51,7 @@ namespace DecouplerShroud {
 
 			//Updates mesh
 			multiCylinder.updateMeshes();
-			//collCylinder.updateMeshes();
+			collCylinder.updateMeshes();
 
 		}
 
@@ -140,14 +141,14 @@ namespace DecouplerShroud {
 			coll0.height = height - bevel.y;
 			coll0.botWidth = botWidth;
 			coll0.topWidth = topWidth;
-			coll1.uvBot = 0;
-			coll1.uvTop = 1;
+			coll0.uvBot = 0;
+			coll0.uvTop = 1;
 
 			coll1.submesh = 0;
 			coll1.bottomStart = vertOffset + height;
 			coll1.height = -height - bottomEdgeSize;
-			coll1.botWidth = topWidth - thickness * topWidth / 4f;
-			coll1.topWidth = Mathf.Min(botWidth - thickness * topWidth / 4f, botWidth - bottomEdgeSize);
+			coll1.botWidth = topWidth - collisionThickness * thickness * topWidth;
+			coll1.topWidth = Mathf.Min(botWidth - collisionThickness * thickness * topWidth, botWidth - bottomEdgeSize);
 			coll1.uvBot = 0;
 			coll1.uvTop = 1;
 
