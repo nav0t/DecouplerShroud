@@ -41,6 +41,9 @@ namespace DecouplerShroud {
 		[UI_FloatEdit(scene = UI_Scene.Editor, minValue = -2f, maxValue = 2f, incrementLarge = .1f, incrementSlide = 0.01f, incrementSmall = 0.01f, unit = "m", sigFigs = 2, useSI = false)]
 		public float vertOffset = 0.0f;
 
+		[KSPField(guiName = "Shroud Collider", isPersistant = true, guiActiveEditor = true, guiActive = false), UI_Toggle(invertButton = true)]
+		public bool collisionEnabled;
+
 		[KSPField(guiName = "Jettison Mode", isPersistant = true, guiActiveEditor = true, guiActive = false)]
 		[UI_ChooseOption(affectSymCounterparts = UI_Scene.Editor, options = new[] { "Stay", "2 Shells", "3 Shells", "4 Shells", "6 Shells" }, scene = UI_Scene.Editor, suppressEditorShipModified = true)]
 		int segmentIndex;
@@ -74,12 +77,9 @@ namespace DecouplerShroud {
 		[KSPField(isPersistant = false)]
 		public float jettisonVelocity = 1;
 		[KSPField(isPersistant = false)]
-		public bool collisionEnabled;
+		public float editorMinAlpha = .2f;
 		[KSPField(isPersistant = false)]
 		public float collisionThickness = 1;
-		[KSPField(isPersistant = false)]
-		public float editorMinAlpha = .2f;
-
 		[KSPField(isPersistant = true)]
 		public int segments = 1;
 		[KSPField(isPersistant = true)]
@@ -114,7 +114,6 @@ namespace DecouplerShroud {
 		Part lastShroudedPart = null;
 
 		DragCubeList starDragCubes;
-
 
 		public void setup() {
 
@@ -176,6 +175,9 @@ namespace DecouplerShroud {
 		}
 
 		public void Start() {
+			if (HighLogic.LoadedSceneIsFlight && !shroudEnabled) {
+				return;
+			}
 			setup();
 		}
 
@@ -357,11 +359,13 @@ namespace DecouplerShroud {
 				Fields[nameof(autoDetectSize)].guiActiveEditor = true;
 				Fields[nameof(segmentIndex)].guiActiveEditor = true;
 				Fields[nameof(textureIndex)].guiActiveEditor = true;
+				Fields[nameof(collisionEnabled)].guiActiveEditor = true;
 
 			} else {
 				Fields[nameof(autoDetectSize)].guiActiveEditor = false;
 				Fields[nameof(segmentIndex)].guiActiveEditor = false;
 				Fields[nameof(textureIndex)].guiActiveEditor = false;
+				Fields[nameof(collisionEnabled)].guiActiveEditor = false;
 
 			}
 			if (shroudEnabled && !autoDetectSize) {
@@ -652,15 +656,6 @@ namespace DecouplerShroud {
 			updateTexture();
 			shroudShaper.update();
 			shroudGO.SetActive(!invisibleShroud);
-
-			//Update collision meshes
-			if (collisionEnabled && HighLogic.LoadedSceneIsFlight) {
-				foreach (MeshCollider mc in shroudGO.GetComponentsInChildren<MeshCollider>()) {
-					int index = int.Parse(mc.gameObject.name.Substring("SegColl: ".Length));
-					Debug.Log(mc.gameObject.name + ";" +index);
-					mc.sharedMesh = shroudShaper.collCylinder.meshes[index];
-				}
-			}
 		}
 
 		//Recalculates the drag cubes for the model
@@ -714,15 +709,15 @@ namespace DecouplerShroud {
 				//Create Gameobjects with meshColliders if collisionEnabled
 				if (collisionEnabled && HighLogic.LoadedSceneIsFlight) {
 					for (int j = 0; j < collPerSegment; j++) {
-						GameObject segColl = new GameObject("SegColl: "+ (i * collPerSegment + j));
+						GameObject segColl = new GameObject("SegColl");
 						segColl.transform.parent = segment.transform;
 						segColl.transform.localPosition = Vector3.zero;
 						segColl.transform.localRotation = Quaternion.identity;
 						segColl.AddComponent<MeshCollider>();
-						segColl.GetComponent<MeshCollider>().convex = true;
 						segColl.GetComponent<MeshCollider>().sharedMesh = shroudShaper.collCylinder.meshes[i * collPerSegment + j];
+						segColl.GetComponent<MeshCollider>().convex = true;
 
-						//segColl.AddComponent<MeshFilter>().sharedMesh = segColl.GetComponent<MeshCollider>().sharedMesh;
+						//segColl.AddComponent<MeshFilter>().sharedMesh = shroudCylinders.collCylinder.meshes[i * collPerSegment + j];
 						//segColl.AddComponent<MeshRenderer>();
 					}
 				}
