@@ -20,7 +20,7 @@ namespace DecouplerShroud {
 			this.sides = sides;
 			this.decouplerShroud = decouplerShroud;
 			multiCylinder = new MultiCylinder(sides, 6, 3, true);
-			collCylinder = new MultiCylinder(sides, 2, 1, false);
+			collCylinder = new MultiCylinder(sides, 4, 1, false);
 		}
 		
 		void getDecouplerShroudValues() {
@@ -66,12 +66,14 @@ namespace DecouplerShroud {
 			Cylinder cout = multiCylinder.cylinders[0]; //outside shell
 			Cylinder ctopBevel = multiCylinder.cylinders[5]; //top bevel in edge
 			Cylinder ctop = multiCylinder.cylinders[4]; //top flat bit
-			Cylinder inside = multiCylinder.cylinders[3]; //inside
+			Cylinder cinside = multiCylinder.cylinders[3]; //inside
 			Cylinder cbot = multiCylinder.cylinders[2]; //bottom flat
 			Cylinder cBotBevel = multiCylinder.cylinders[1]; //bottom tucked in edge
 
-			Cylinder coll0 = collCylinder.cylinders[0];//Collision outer
-			Cylinder coll1 = collCylinder.cylinders[1];//Collision inner
+			Cylinder collOut = collCylinder.cylinders[0];//Collision outer
+			Cylinder collIn = collCylinder.cylinders[1];//Collision inner
+			Cylinder collTop = collCylinder.cylinders[2];//Collision top
+			Cylinder collBot = collCylinder.cylinders[3];//Collision bottom
 
 			Vector2 bevel = new Vector2((botWidth - topWidth), height).normalized + Vector2.right;
 			bevel = bevel.normalized * topBevelSize;
@@ -128,29 +130,34 @@ namespace DecouplerShroud {
 			cbot.rings = topEdgeLoops;
 
 			//Sets inner shell values
-			inside.submesh = 2;
-			inside.bottomStart = vertOffset + height;
-			inside.height = -height - bottomEdgeSize;
-			inside.botWidth = topWidth - thickness * topWidth;
-			inside.topWidth = Mathf.Min(botWidth - thickness * topWidth, botWidth - bottomEdgeSize);
-			inside.uvBot = 0;
-			inside.uvTop = 1;
+			cinside.submesh = 2;
+			cinside.bottomStart = vertOffset + height;
+			cinside.height = -height - bottomEdgeSize;
+			cinside.botWidth = topWidth - thickness * topWidth;
+			cinside.topWidth = Mathf.Min(botWidth - thickness * topWidth, botWidth - bottomEdgeSize);
+			cinside.uvBot = 0;
+			cinside.uvTop = 1;
 
-			coll0.submesh = 0;
-			coll0.bottomStart = vertOffset;
-			coll0.height = height - bevel.y;
-			coll0.botWidth = botWidth;
-			coll0.topWidth = topWidth;
-			coll0.uvBot = 0;
-			coll0.uvTop = 1;
+			//=============COLL VALUES====================//
+			collOut.bottomStart = vertOffset;
+			collOut.height = height - bevel.y;
+			collOut.botWidth = botWidth;
+			collOut.topWidth = topWidth;
 
-			coll1.submesh = 0;
-			coll1.bottomStart = vertOffset + height;
-			coll1.height = -height - bottomEdgeSize;
-			coll1.botWidth = topWidth - collisionThickness * thickness * topWidth;
-			coll1.topWidth = Mathf.Min(botWidth - collisionThickness * thickness * topWidth, botWidth - bottomEdgeSize);
-			coll1.uvBot = 0;
-			coll1.uvTop = 1;
+			collIn.bottomStart = vertOffset + height;
+			collIn.height = -height - bottomEdgeSize;
+			collIn.botWidth = topWidth - collisionThickness * thickness * topWidth;
+			collIn.topWidth = Mathf.Min(botWidth - collisionThickness * thickness * topWidth, botWidth - bottomEdgeSize);
+
+			collTop.bottomStart = vertOffset + height;
+			collTop.height = 0;
+			collTop.botWidth = collOut.topWidth;
+			collTop.topWidth = collIn.topWidth;
+
+			collBot.bottomStart = vertOffset;
+			collBot.height = 0;
+			collBot.botWidth = collIn.botWidth;
+			collBot.topWidth = collOut.botWidth;
 
 			topWidth -= antiZFightSizeIncrease;
 			botWidth -= antiZFightSizeIncrease;
