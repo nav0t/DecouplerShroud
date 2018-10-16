@@ -44,6 +44,9 @@ namespace DecouplerShroud {
 		[KSPField(guiName = "Shroud Collider", isPersistant = true, guiActiveEditor = true, guiActive = false), UI_Toggle(invertButton = true)]
 		public bool collisionEnabled;
 
+		[KSPField(guiName = "Warning! Collider might be too small", guiActiveEditor = true)]
+		private string collisionSizeWarningText;
+
 		[KSPField(guiName = "Jettison Mode", isPersistant = true, guiActiveEditor = true, guiActive = false)]
 		[UI_ChooseOption(affectSymCounterparts = UI_Scene.Editor, options = new[] { "Stay", "2 Shells", "3 Shells", "4 Shells", "6 Shells" }, scene = UI_Scene.Editor, suppressEditorShipModified = true)]
 		int segmentIndex;
@@ -52,6 +55,12 @@ namespace DecouplerShroud {
 		[UI_ChooseOption(affectSymCounterparts = UI_Scene.Editor, options = new[] { "None" }, scene = UI_Scene.Editor, suppressEditorShipModified = true)]
 		public int textureIndex;
 
+		float collisionMaxTargetFac = 0.998f;
+		[KSPField(isPersistant = false)]
+		public float maxCollisionSizeFactor = 1.005f;
+
+		[KSPField(isPersistant = true)]
+		public float collisionSizeFactor = 1f;
 
 		[KSPField(isPersistant = true)]
 		public string textureName;
@@ -266,6 +275,13 @@ namespace DecouplerShroud {
 
 		}
 
+
+		[KSPEvent(guiName = "ShowCollider", guiActive = true, guiActiveEditor = true)]
+		public void showcollider() {
+			Debug.Log(part.collider);
+			part.collider.gameObject.GetComponent<MeshFilter>().sharedMesh = ((MeshCollider)part.collider).sharedMesh;
+		}
+
 		//Jettisons the shroud
 		[KSPEvent(guiName = "Jettison", guiActive = true, guiActiveEditor = false)]
 		public void Jettison() {
@@ -277,6 +293,10 @@ namespace DecouplerShroud {
 			Events[nameof(Jettison)].guiActive = false;
 
 			jettisoned = true;
+
+			if (shroudGO == null) {
+				Debug.LogError("DecouplerShroud: Jettison() shroudGO is null");
+			}
 
 			for (int i = 0; i < shroudGO.transform.childCount; i++) {
 				GameObject c = shroudGO.transform.GetChild(i).gameObject;
@@ -330,6 +350,7 @@ namespace DecouplerShroud {
 			//Trigger rebuilding of shrouds
 			createNewShroudGO();
 
+			updateCollisionSizeFactor();
 		}
 
 		//Disables and reenables stock engine shrouds
@@ -384,6 +405,7 @@ namespace DecouplerShroud {
 				Fields[nameof(thickness)].guiActiveEditor = false;
 			}
 
+			updateCollisionSizeFactor();
 			Events[nameof(Jettison)].guiActive = !jettisoned && shroudEnabled && (segments > 1);
 			//Debug.Log("set jettison gui to: "+ (!jettisoned && shroudEnabled && (segments > 1)) +", "+jettisoned+", "+shroudEnabled+", "+(segments>1)+", "+segments);
 		}
@@ -422,7 +444,7 @@ namespace DecouplerShroud {
 		void detectSize(object arg) { detectSize(); }
 		void detectSize() {
 
-
+			
 			invisibleShroud = false;
 			
 
@@ -458,7 +480,7 @@ namespace DecouplerShroud {
 						while (parentTransform != part.transform && parentTransform != null) {
 							botWidth *= parentTransform.localScale.x;
 							parentTransform = parentTransform.parent;
-						}
+						} 
 
 
 						botWidth = getPartRadAtPos(part, GetDecouperShroudedNodeWorldPos(), part.transform.up, .2f) * 2;
@@ -541,6 +563,9 @@ namespace DecouplerShroud {
 
 				//Set height of shroud to vertical difference between top and bottom node
 				height = differenceVector.y;
+
+				height = (GetShroudedPart().FindAttachNode("top").position-GetShroudedPart().FindAttachNode("bottom").position - Vector3.up * defaultVertOffset).y;
+
 			} else {
 				//Debug.LogError("Decoupler has no grandparent");
 				height = 0;
@@ -658,6 +683,7 @@ namespace DecouplerShroud {
 			updateTexture();
 			shroudShaper.update();
 			shroudGO.SetActive(!invisibleShroud);
+			updateCollisionSizeFactor();
 
 			//Update collision meshes
 			if (collisionEnabled && (HighLogic.LoadedSceneIsFlight || collisionInEditor)) {
@@ -746,12 +772,8 @@ namespace DecouplerShroud {
 		//Creates the material for the mesh
 		void CreateMaterials() {
 			shroudMats = new Material[3];
-			Shader s = null;
-			if (HighLogic.LoadedSceneIsEditor) {
-				s = Shader.Find("KSP/Bumped Specular");
-			} else {
-				s = Shader.Find("KSP/Bumped Specular (Transparent)");
-			}
+			Shader s = Shader.Find("KSP/Bumped Specular (Mapped)");
+			
 
 			for (int i = 0; i < shroudMats.Length; i++) {
 
@@ -790,6 +812,23 @@ namespace DecouplerShroud {
 
 		float distPointRay(Vector3 p, Ray r) {
 			return Vector3.Cross(r.direction, p - r.origin).magnitude / r.direction.magnitude;
+		}
+
+		void updateCollisionSizeFactor() {
+
+			Part shroudedPart = GetShroudedPart();
+			if (shroudedPart == null) {
+				Fields[nameof(collisionSizeWarningText)].guiActiveEditor = false;
+				return;
+			}
+
+			float maxCollWidth = getPartRadAtPos(shroudedPart, GetDecouperShroudedNodeWorldPos(), part.transform.up, 1000) * 2;
+			float factor = maxCollWidth / (topWidth * (1-thickness*collisionThickness));
+
+			collisionSizeFactor = Mathf.Clamp(factor / collisionMaxTargetFac, 1, maxCollisionSizeFactor);
+
+			Fields[nameof(collisionSizeWarningText)].guiActiveEditor = true;
+			Fields[nameof(collisionSizeWarningText)].guiName = "width: " + maxCollWidth+" ,fac: "+factor+", cf "+collisionSizeFactor;
 		}
 
 		bool destroyShroudIfNoTopNode() {

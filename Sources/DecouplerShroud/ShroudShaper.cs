@@ -13,7 +13,7 @@ namespace DecouplerShroud {
 		public MultiCylinder collCylinder;
 
 		ModuleDecouplerShroud decouplerShroud;
-		float vertOffset, height, botWidth, topWidth, thickness, bottomEdgeSize, topBevelSize, antiZFightSizeIncrease, collisionThickness;
+		float vertOffset, height, botWidth, topWidth, thickness, bottomEdgeSize, topBevelSize, antiZFightSizeIncrease, collisionThickness, collisionSizeFactor;
 		int outerEdgeLoops, topEdgeLoops;
 
 		public ShroudShaper(ModuleDecouplerShroud decouplerShroud, int sides) {
@@ -35,6 +35,7 @@ namespace DecouplerShroud {
 			this.outerEdgeLoops = decouplerShroud.outerEdgeLoops;
 			this.topEdgeLoops = decouplerShroud.topEdgeLoops;
 			this.collisionThickness = decouplerShroud.collisionThickness;
+			this.collisionSizeFactor = decouplerShroud.collisionSizeFactor;
 
 			multiCylinder.segments = decouplerShroud.segments;
 			collCylinder.segments = decouplerShroud.segments * decouplerShroud.collPerSegment;
@@ -141,13 +142,13 @@ namespace DecouplerShroud {
 			//=============COLL VALUES====================//
 			collOut.bottomStart = vertOffset;
 			collOut.height = height - bevel.y;
-			collOut.botWidth = botWidth;
-			collOut.topWidth = topWidth;
+			collOut.botWidth = collisionSizeFactor * botWidth;
+			collOut.topWidth = collisionSizeFactor * topWidth;
 
 			collIn.bottomStart = vertOffset + height;
 			collIn.height = -height - bottomEdgeSize;
-			collIn.botWidth = topWidth - collisionThickness * thickness * topWidth;
-			collIn.topWidth = Mathf.Min(botWidth - collisionThickness * thickness * topWidth, botWidth - bottomEdgeSize);
+			collIn.botWidth = collisionSizeFactor *  (topWidth - collisionThickness * thickness * topWidth);
+			collIn.topWidth = collisionSizeFactor * Mathf.Min(botWidth - collisionThickness * thickness * topWidth, botWidth - bottomEdgeSize);
 
 			collTop.bottomStart = vertOffset + height;
 			collTop.height = 0;
