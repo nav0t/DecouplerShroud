@@ -14,9 +14,9 @@ namespace DecouplerShroud {
 
 		public Material mat;
 
-		List<Tuple<string, Texture>> textures;
-		List<Tuple<string, float>> floats;
-		List<Tuple<string, Color>> colors;
+		Dictionary<string, Texture> textures = new Dictionary<string, Texture>();
+		Dictionary<string, float> floats = new Dictionary<string, float>();
+		Dictionary<string, Color> colors = new Dictionary<string, Color>();
 
 		public Vector2 scale = new Vector2(1, 1);
 
@@ -29,9 +29,6 @@ namespace DecouplerShroud {
 		public float autoMinVFactor = 1;
 
 		public SurfaceTexture(ConfigNode node, int version) {
-			textures = new List<Tuple<string, Texture>>();
-			floats = new List<Tuple<string, float>>();
-			colors = new List<Tuple<string, Color>>();
 			
 			if (version == 1) {
 				ParseNodeV1(node);
@@ -48,14 +45,17 @@ namespace DecouplerShroud {
 			mat = new Material(getShader(shader));
 
 			
-			foreach (Tuple<string, Texture> t in textures) {
-				mat.SetTexture(t.Item1, t.Item2);
+			foreach (KeyValuePair<string, Texture> t in textures) {
+				if (mat.HasProperty(t.Key))
+					mat.SetTexture(t.Key, t.Value);
 			}
-			foreach (Tuple<string, float> t in floats) {
-				mat.SetFloat(t.Item1, t.Item2);
+			foreach (KeyValuePair<string, float> t in floats) {
+				if (mat.HasProperty(t.Key))
+					mat.SetFloat(t.Key, t.Value);
 			}
-			foreach (Tuple<string, Color> t in colors) {
-				mat.SetColor(t.Item1, t.Item2);
+			foreach (KeyValuePair<string, Color> t in colors) {
+				if (mat.HasProperty(t.Key))
+					mat.SetColor(t.Key, t.Value);
 			}
 		}
 
@@ -103,32 +103,30 @@ namespace DecouplerShroud {
 		void getPropertiesFromNode(ConfigNode node) {
 
 			foreach (string s in node.GetValues("texture")) {
+				Debug.Log("[LOADING TEXTURES] "+s);
 				string[] split = s.Split(',');
-				//RemovePropertyIfExists(textures, split[0]);
-				textures.Add(new Tuple<string, Texture>(split[0], GameDatabase.Instance.GetTexture(split[1], false)));
+				RemovePropertyIfExists(textures, split[0]);
+				textures.Add(split[0], GameDatabase.Instance.GetTexture(split[1].Trim(), false));
 			}
 			foreach (string s in node.GetValues("float")) {
 				string[] split = s.Split(',');
-				//RemovePropertyIfExists(floats, split[0]);
-				floats.Add(new Tuple<string, float>(split[0], float.Parse(split[1])));
+				RemovePropertyIfExists(floats, split[0]);
+				floats.Add(split[0], float.Parse(split[1].Trim()));
 			}
 			foreach (string s in node.GetValues("color")) {
 				string[] split = s.Split(',');
-				//RemovePropertyIfExists(colors, split[0]);
-				colors.Add(new Tuple<string, Color>(split[0], ConfigNode.ParseColor(s.Substring(split[0].Length))));
+				RemovePropertyIfExists(colors, split[0]);
+				colors.Add(split[0], ConfigNode.ParseColor(s.Substring(split[0].Length).Trim()));
 			}
 
 			ParseScalingOptions(node);
 		}
 
-		/*void RemovePropertyIfExists<T>(List<Tuple<string, T>> list, string name) {
-			foreach (Tuple<string, T> t in list) {
-				if (t.Item1 == name) {
-					list.Remove(t);
-					return;
-				}
+		void RemovePropertyIfExists<T>(Dictionary<string, T> dict, string name) {
+			if (dict.ContainsKey(name)) {
+				dict.Remove(name);
 			}
-		}*/
+		}
 
 		void ParseNodeV1(ConfigNode node) {
 			GameDatabase gdb = GameDatabase.Instance;
@@ -152,11 +150,11 @@ namespace DecouplerShroud {
 				specularColor = ConfigNode.ParseColor(node.GetValue("specularColor"));
 
 			
-			textures.Add(new Tuple<string, Texture>("_MainTex", texture));
-			textures.Add(new Tuple<string, Texture>("_BumpMap", normalMap));
+			textures.Add("_MainTex", texture);
+			textures.Add("_BumpMap", normalMap);
 
-			floats.Add(new Tuple<string, float>("_Shininess", shininess));
-			colors.Add(new Tuple<string, Color>("_SpecColor", specularColor));
+			floats.Add("_Shininess", shininess);
+			colors.Add("_SpecColor", specularColor);
 
 			ParseScalingOptions(node);
 		}
@@ -199,8 +197,8 @@ namespace DecouplerShroud {
 				uvScale.Scale(size);
 			}
 
-			foreach (Tuple<string, Texture> t in textures) {
-				m.SetTextureScale(t.Item1, uvScale);
+			foreach (KeyValuePair<string, Texture> t in textures) {
+				m.SetTextureScale(t.Key, uvScale);
 			}
 		
 		}
