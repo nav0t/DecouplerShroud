@@ -46,6 +46,7 @@ namespace DecouplerShroud {
 					return s;
 				}
 			}
+			
 			return null;
 		}
 
@@ -55,7 +56,7 @@ namespace DecouplerShroud {
 				int.TryParse(node.GetValue("v"), out v);
 
 			if (!node.HasNode("outside") || !node.HasNode("top") || !node.HasNode("inside")) {
-				Debug.LogError("Decoupler Shroud texture config missing node: " + node);
+				Debug.LogError("[DecouplerShroud] texture config missing node: " + node);
 				return;
 			}
 
@@ -71,6 +72,8 @@ namespace DecouplerShroud {
 			tex.textures.Add(new SurfaceTexture(node.GetNode("top"), v));
 			tex.textures.Add(new SurfaceTexture(node.GetNode("inside"), v));
 			shroudTextures.Add(tex);
+			Debug.Log("[DecouplerShroud] Loaded ShroudedTexture: " + tex.name);
+
 
 			if (waiting.ContainsValue(tex.name)) {
 				foreach (KeyValuePair<ConfigNode, string> p in waiting) {
@@ -97,6 +100,7 @@ namespace DecouplerShroud {
 			tex.textures.Add(new SurfaceTexture(node.GetNode("top"), texBase.textures[1], v));
 			tex.textures.Add(new SurfaceTexture(node.GetNode("inside"), texBase.textures[2], v));
 			shroudTextures.Add(tex);
+			Debug.Log("[DecouplerShroud] Loaded ShroudedTexture: "+tex.name + " base: "+texBase.name);
 
 			if (waiting.ContainsValue(tex.name)) {
 				foreach (KeyValuePair<ConfigNode, string> p in waiting) {

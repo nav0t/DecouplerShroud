@@ -10,6 +10,7 @@ namespace DecouplerShroud {
 		public static Dictionary<string, Shader> loadedShaders = new Dictionary<string, Shader>();
 
 		public string shader = "KSP/Bumped Specular";
+		public string texBaseShader = "";
 
 		public Material mat;
 
@@ -34,7 +35,7 @@ namespace DecouplerShroud {
 			} else if (version == 2) {
 				ParseNodeV2(node);
 			} else {
-				Debug.LogError("DecouplerShroud: Unknown Texture config version: "+ version);
+				Debug.LogError("[DecouplerShroud] Unknown Texture config version: "+ version);
 			}
 			createMaterial();
 
@@ -49,6 +50,8 @@ namespace DecouplerShroud {
 				floats = new Dictionary<string, float>(texBase.floats);
 				colors = new Dictionary<string, Color>(texBase.colors);
 
+				texBaseShader = texBase.shader;
+				shader = texBase.shader;
 				scale = texBase.scale;
 				autoScale = texBase.autoScale;
 				autoWidthDivide = texBase.autoWidthDivide;
@@ -65,7 +68,7 @@ namespace DecouplerShroud {
 				} else if (version == 2) {
 					ParseNodeV2(node);
 				} else {
-					Debug.LogError("DecouplerShroud: Unknown Texture config version: " + version);
+					Debug.LogError("[DecouplerShroud] Unknown Texture config version: " + version);
 				}
 			}
 			
@@ -78,16 +81,25 @@ namespace DecouplerShroud {
 
 			
 			foreach (KeyValuePair<string, Texture> t in textures) {
-				if (mat.HasProperty(t.Key))
+				if (mat.HasProperty(t.Key)) {
 					mat.SetTexture(t.Key, t.Value);
+				} else {
+					Debug.LogWarning("[DecouplerShroud] Material doesn't have property: "+t.Key+" ("+mat.shader.name+")");
+				}
 			}
 			foreach (KeyValuePair<string, float> t in floats) {
-				if (mat.HasProperty(t.Key))
+				if (mat.HasProperty(t.Key)) {
 					mat.SetFloat(t.Key, t.Value);
+				} else {
+					Debug.LogWarning("[DecouplerShroud] Material doesn't have property: " + t.Key + " (" + mat.shader.name + ")");
+				}
 			}
 			foreach (KeyValuePair<string, Color> t in colors) {
-				if (mat.HasProperty(t.Key))
+				if (mat.HasProperty(t.Key)) {
 					mat.SetColor(t.Key, t.Value);
+				} else {
+					Debug.LogWarning("[DecouplerShroud] Material doesn't have property: " + t.Key + " (" + mat.shader.name + ")");
+				}
 			}
 		}
 
@@ -96,7 +108,10 @@ namespace DecouplerShroud {
 				foreach (ConfigNode m in node.GetNodes("MaterialVariant")) {
 					if (m.HasValue("shader")) {
 						if (getShader(m.GetValue("shader")) == null) {
-							//Debug.Log("==========\ndidn't find shader: " + m.GetValue("shader") + "\n================");
+							Debug.Log("[DecouplerShroud] Didn't find shader: " + m.GetValue("shader"));
+							continue;
+						}
+						if (texBaseShader != "" && texBaseShader != m.GetValue("shader")) {
 							continue;
 						}
 					}
@@ -134,8 +149,10 @@ namespace DecouplerShroud {
 
 		void getPropertiesFromNode(ConfigNode node) {
 
+			if (node.HasValue("shader"))
+				shader = node.GetValue("shader");
+
 			foreach (string s in node.GetValues("texture")) {
-				Debug.Log("[LOADING TEXTURES] "+s);
 				string[] split = s.Split(',');
 				if (split.Length < 2) {
 					Debug.LogWarning("[DecouplerShroud] texture value only has one parameter: "+ s);
@@ -238,9 +255,10 @@ namespace DecouplerShroud {
 			}
 
 			foreach (KeyValuePair<string, Texture> t in textures) {
-				m.SetTextureScale(t.Key, uvScale);
+				if (m.HasProperty(t.Key)) {
+					m.SetTextureScale(t.Key, uvScale);
+				}
 			}
-		
 		}
 
 		float roundScaleToStep(float s, float step, float minScale) {
