@@ -7,11 +7,16 @@ using UnityEngine;
 
 namespace DecouplerShroud {
 	class SurfaceTexture {
-		public Texture texture;
-		public Texture normalMap;
+		public static Dictionary<string, Shader> loadedShaders = new Dictionary<string, Shader>();
 
-		public float shininess = 0.7f;
-		public Color specularColor = Color.white * .2f;
+
+		public string shader = "KSP/Bumped Specular";
+
+		public Material mat;
+
+		List<Tuple<string, Texture>> textures;
+		List<Tuple<string, float>> floats;
+		List<Tuple<string, Color>> colors;
 
 		public Vector2 scale = new Vector2(1, 1);
 
@@ -23,8 +28,118 @@ namespace DecouplerShroud {
 		public float autoMinUFactor = 1;
 		public float autoMinVFactor = 1;
 
-		public SurfaceTexture(ConfigNode node) {
+		public SurfaceTexture(ConfigNode node, int version) {
+			textures = new List<Tuple<string, Texture>>();
+			floats = new List<Tuple<string, float>>();
+			colors = new List<Tuple<string, Color>>();
+			
+			if (version == 1) {
+				ParseNodeV1(node);
+			} else if (version == 2) {
+				ParseNodeV2(node);
+			} else {
+				Debug.LogError("DecouplerShroud: Unknown Texture config version: "+ version);
+			}
+			createMaterial();
+
+		}
+
+		void createMaterial() {
+			mat = new Material(getShader(shader));
+
+			
+			foreach (Tuple<string, Texture> t in textures) {
+				mat.SetTexture(t.Item1, t.Item2);
+			}
+			foreach (Tuple<string, float> t in floats) {
+				mat.SetFloat(t.Item1, t.Item2);
+			}
+			foreach (Tuple<string, Color> t in colors) {
+				mat.SetColor(t.Item1, t.Item2);
+			}
+		}
+
+		ConfigNode selectMaterialVariant(ConfigNode node) {
+			if (node.HasNode("MaterialVariant")) {
+				foreach (ConfigNode m in node.GetNodes("MaterialVariant")) {
+					if (m.HasValue("shader")) {
+						if (getShader(m.GetValue("shader")) == null) {
+							//Debug.Log("==========\ndidn't find shader: " + m.GetValue("shader") + "\n================");
+							continue;
+						}
+					}
+					return m;
+				}
+			}
+			return null;
+		}
+
+		Shader getShader(string name) {
+			if (loadedShaders.ContainsKey(name)) {
+				return loadedShaders[name];
+			}
+			Shader s = GameDatabase.Instance.databaseShaders.Find(m => m.name == name);
+			if (s != null) {
+				loadedShaders.Add(name, s);
+				return s;
+			}
+			s = Shader.Find(name);
+			loadedShaders.Add(name, s);
+			
+			return s;
+		}
+
+		void ParseNodeV2(ConfigNode node) {
+
+			getPropertiesFromNode(node);
+
+			ConfigNode mVar = selectMaterialVariant(node);
+
+			if (mVar != null) {
+				getPropertiesFromNode(mVar);
+			}
+		}
+
+		void getPropertiesFromNode(ConfigNode node) {
+
+			foreach (string s in node.GetValues("texture")) {
+				string[] split = s.Split(',');
+				//RemovePropertyIfExists(textures, split[0]);
+				textures.Add(new Tuple<string, Texture>(split[0], GameDatabase.Instance.GetTexture(split[1], false)));
+			}
+			foreach (string s in node.GetValues("float")) {
+				string[] split = s.Split(',');
+				//RemovePropertyIfExists(floats, split[0]);
+				floats.Add(new Tuple<string, float>(split[0], float.Parse(split[1])));
+			}
+			foreach (string s in node.GetValues("color")) {
+				string[] split = s.Split(',');
+				//RemovePropertyIfExists(colors, split[0]);
+				colors.Add(new Tuple<string, Color>(split[0], ConfigNode.ParseColor(s.Substring(split[0].Length))));
+			}
+
+			ParseScalingOptions(node);
+		}
+
+		/*void RemovePropertyIfExists<T>(List<Tuple<string, T>> list, string name) {
+			foreach (Tuple<string, T> t in list) {
+				if (t.Item1 == name) {
+					list.Remove(t);
+					return;
+				}
+			}
+		}*/
+
+		void ParseNodeV1(ConfigNode node) {
 			GameDatabase gdb = GameDatabase.Instance;
+
+			float shininess = 0.7f;
+			Color specularColor = Color.white * .2f;
+			Texture texture = null;
+			Texture normalMap = null;
+
+			if (node.HasValue("shader"))
+				shader = node.GetValue("shader");
 
 			if (node.HasValue("texture"))
 				texture = gdb.GetTexture(node.GetValue("texture"), false);
@@ -36,6 +151,17 @@ namespace DecouplerShroud {
 			if (node.HasValue("specularColor"))
 				specularColor = ConfigNode.ParseColor(node.GetValue("specularColor"));
 
+			
+			textures.Add(new Tuple<string, Texture>("_MainTex", texture));
+			textures.Add(new Tuple<string, Texture>("_BumpMap", normalMap));
+
+			floats.Add(new Tuple<string, float>("_Shininess", shininess));
+			colors.Add(new Tuple<string, Color>("_SpecColor", specularColor));
+
+			ParseScalingOptions(node);
+		}
+
+		void ParseScalingOptions(ConfigNode node) {
 			if (node.HasValue("uScale"))
 				float.TryParse(node.GetValue("uScale"), out scale.x);
 			if (node.HasValue("vScale"))
@@ -58,7 +184,7 @@ namespace DecouplerShroud {
 				float.TryParse(node.GetValue("autoMinVFactor"), out autoMinVFactor);
 		}
 
-		public void SetMaterialProperties(Material m, Vector2 size) {
+		public void SetTextureScale(Material m, Vector2 size) {
 			Vector2 uvScale = scale;
 
 			if (autoWidthDivide) {
@@ -73,15 +199,10 @@ namespace DecouplerShroud {
 				uvScale.Scale(size);
 			}
 
-			m.SetTexture("_MainTex", texture);
-			m.SetTextureScale("_MainTex", uvScale);
-
-			m.SetTexture("_BumpMap", normalMap);
-			m.SetTextureScale("_BumpMap", uvScale);
-
-			m.SetFloat("_Shininess", shininess);
-			m.SetColor("_SpecColor", specularColor);
-			
+			foreach (Tuple<string, Texture> t in textures) {
+				m.SetTextureScale(t.Item1, uvScale);
+			}
+		
 		}
 
 		float roundScaleToStep(float s, float step, float minScale) {

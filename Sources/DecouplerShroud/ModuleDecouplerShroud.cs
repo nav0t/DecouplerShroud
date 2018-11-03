@@ -147,7 +147,7 @@ namespace DecouplerShroud {
 			Fields[nameof(height)].OnValueModified += updateShroud;
 			Fields[nameof(thickness)].OnValueModified += updateShroud;
 			Fields[nameof(vertOffset)].OnValueModified += updateShroud;
-			Fields[nameof(textureIndex)].OnValueModified += updateTexture;
+			Fields[nameof(textureIndex)].OnValueModified += changeMaterial;
 
 			Fields[nameof(segmentIndex)].OnValueModified += segmentUpdate;
 
@@ -262,7 +262,7 @@ namespace DecouplerShroud {
 		//Jettisons the shroud
 		[KSPEvent(guiName = "Jettison", guiActive = true, guiActiveEditor = false)]
 		public void Jettison() {
-			Debug.Log("Jettison called on DecouplerShroud of "+part.name);
+			//Debug.Log("Jettison called on DecouplerShroud of "+part.name);
 
 			if (segments < 2 || !HighLogic.LoadedSceneIsFlight) {
 				return;
@@ -379,20 +379,15 @@ namespace DecouplerShroud {
 			//Debug.Log("set jettison gui to: "+ (!jettisoned && shroudEnabled && (segments > 1)) +", "+jettisoned+", "+shroudEnabled+", "+(segments>1)+", "+segments);
 		}
 
-		void updateTexture(object arg) { updateTexture(); }
-		void updateTexture() {
-			
+		void changeMaterial(object arg) { changeMaterial(); }
+		void changeMaterial() {
 			ShroudTexture shroudTex = ShroudTexture.shroudTextures[textureIndex];
 
 			//save current textures name
 			textureName = shroudTex.name;
+			CreateMaterials(shroudTex);
 
-			Vector2 sideSize = new Vector2(Mathf.Max(botWidth,topWidth), new Vector2(height,topWidth-botWidth).magnitude);
-			Vector2 topSize = new Vector2(topWidth, topWidth * thickness);
-
-			shroudTex.textures[0].SetMaterialProperties(shroudMats[0], sideSize);
-			shroudTex.textures[1].SetMaterialProperties(shroudMats[1], topSize);
-			shroudTex.textures[2].SetMaterialProperties(shroudMats[2], sideSize);
+			updateTextureScale();
 
 			if (shroudGO == null) {
 				return;
@@ -400,6 +395,51 @@ namespace DecouplerShroud {
 			foreach (Renderer r in shroudGO.GetComponentsInChildren<Renderer>()) {
 				r.materials = shroudMats;
 			}
+		}
+
+		void updateTextureScale() {
+			if (shroudMats[0] == null) {
+				Debug.LogWarning("called updateTExtureScale while shroudMats[0] == null");
+				changeMaterial();
+			}
+
+			ShroudTexture shroudTex = ShroudTexture.shroudTextures[textureIndex];
+
+			Vector2 sideSize = new Vector2(Mathf.Max(botWidth,topWidth), new Vector2(height,topWidth-botWidth).magnitude);
+			Vector2 topSize = new Vector2(topWidth, topWidth * thickness);
+
+			shroudTex.textures[0].SetTextureScale(shroudMats[0], sideSize);
+			shroudTex.textures[1].SetTextureScale(shroudMats[1], topSize);
+			shroudTex.textures[2].SetTextureScale(shroudMats[2], sideSize);
+
+		}
+
+		//Creates the material for the mesh
+		void CreateMaterials(ShroudTexture shroudTex) {
+			//Clean up old materials
+			if (shroudMats != null) {
+				foreach (Material mat in shroudMats) {
+					if (mat != null) {
+						Destroy(mat);
+					}
+				}
+			}
+			shroudMats = new Material[3];
+
+			for (int i = 0; i < shroudMats.Length; i++) {
+
+				SurfaceTexture surf = shroudTex.textures[i];
+				//Debug.Log(surf.shader);
+				Shader s = Shader.Find(surf.shader);
+
+				shroudMats[i] = Instantiate(surf.mat);
+				shroudMats[i].name = "shroudMat: " + i + ", " + segments + " segments";
+
+				if (HighLogic.LoadedSceneIsEditor) {
+					shroudMats[i].renderQueue = 3000;
+				}
+			}
+
 		}
 
 		void partReattached() {
@@ -437,7 +477,7 @@ namespace DecouplerShroud {
 					if (part.collider is MeshCollider) {
 						mc = (MeshCollider)part.collider;
 					} else {
-						Debug.Log("part collider is " + part.collider.GetType().ToString());
+						Debug.LogWarning("DecouplerShroud: part collider is " + part.collider.GetType().ToString());
 					}
 
 					if (mc != null) {
@@ -646,7 +686,7 @@ namespace DecouplerShroud {
 			if (shroudGO == null || shroudShaper == null) {
 				createNewShroudGO();
 			}
-			updateTexture();
+			updateTextureScale();
 			shroudShaper.update();
 			shroudGO.SetActive(!invisibleShroud);
 		}
@@ -716,35 +756,13 @@ namespace DecouplerShroud {
 				}
 			}
 			//Setup materials
-			CreateMaterials();
-			updateTexture();
+			changeMaterial();
 
 			Fix_SegmentChangedCallUpdateTexture = 5;
 
 			generateDragCube();
 		}
 
-		//Creates the material for the mesh
-		void CreateMaterials() {
-			shroudMats = new Material[3];
-			Shader s = null;
-			if (HighLogic.LoadedSceneIsEditor) {
-				s = Shader.Find("KSP/Bumped Specular");
-			} else {
-				s = Shader.Find("KSP/Bumped Specular (Transparent)");
-			}
-
-			for (int i = 0; i < shroudMats.Length; i++) {
-
-				shroudMats[i] = new Material(s);
-				shroudMats[i].name = "shroudMat: " + i + ", " + segments + " segments";
-
-				if (HighLogic.LoadedSceneIsEditor) {
-					shroudMats[i].renderQueue = 3000;
-				}
-			}
-
-		}
 
 		void UpdateMaterialsOpacity() {
 			if (!HighLogic.LoadedSceneIsEditor || shroudMats == null) {
@@ -753,7 +771,7 @@ namespace DecouplerShroud {
 
 			//Ugly Fix
 			if (--Fix_SegmentChangedCallUpdateTexture > 0) {
-				updateTexture();
+				updateTextureScale();
 			}
 
 			float alpha = distPointRay(transform.TransformPoint((vertOffset + height) / 2f * Vector3.up),Camera.main.ScreenPointToRay(Input.mousePosition)) / (botWidth + topWidth + height) * 2;

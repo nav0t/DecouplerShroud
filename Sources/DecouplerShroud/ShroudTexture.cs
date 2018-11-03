@@ -7,11 +7,11 @@ using UnityEngine;
 
 namespace DecouplerShroud {
 	class ShroudTexture {
-		public string name = "ERR";
-		public List<SurfaceTexture> textures;
-
 		public static List<ShroudTexture> shroudTextures;
 
+
+		public string name = "ERR";
+		public List<SurfaceTexture> textures;
 		
 		public ShroudTexture() {
 			textures = new List<SurfaceTexture>();
@@ -24,6 +24,13 @@ namespace DecouplerShroud {
 
 				foreach(ConfigNode texconf in GameDatabase.Instance.GetConfigNodes("ShroudTexture")) {
 
+					if (texconf.HasValue("base")) {
+						continue;
+					}
+					int v = 1;
+					if (texconf.HasValue("v"))
+						int.TryParse(texconf.GetValue("v"), out v);
+
 					if (!texconf.HasNode("outside") || !texconf.HasNode("top") || !texconf.HasNode("inside")) {
 						Debug.LogError("Decoupler Shroud texture config missing node: "+ texconf);
 						continue;
@@ -33,9 +40,9 @@ namespace DecouplerShroud {
 					if (texconf.HasValue("name"))
 						tex.name = texconf.GetValue("name");
 
-					tex.textures.Add(new SurfaceTexture(texconf.GetNode("outside")));
-					tex.textures.Add(new SurfaceTexture(texconf.GetNode("top")));
-					tex.textures.Add(new SurfaceTexture(texconf.GetNode("inside")));
+					tex.textures.Add(new SurfaceTexture(texconf.GetNode("outside"), v));
+					tex.textures.Add(new SurfaceTexture(texconf.GetNode("top"), v));
+					tex.textures.Add(new SurfaceTexture(texconf.GetNode("inside"), v));
 
 					shroudTextures.Add(tex);
 				}
