@@ -9,7 +9,6 @@ namespace DecouplerShroud {
 	class SurfaceTexture {
 		public static Dictionary<string, Shader> loadedShaders = new Dictionary<string, Shader>();
 
-
 		public string shader = "KSP/Bumped Specular";
 
 		public Material mat;
@@ -37,6 +36,39 @@ namespace DecouplerShroud {
 			} else {
 				Debug.LogError("DecouplerShroud: Unknown Texture config version: "+ version);
 			}
+			createMaterial();
+
+		}
+
+		public SurfaceTexture(ConfigNode node, SurfaceTexture texBase, int version) {
+
+			if (version == 1) {
+				Debug.LogWarning("[DecouplerShroud] Base Textures are designed for Texture Config Version 2+ (v = 2)");
+			} else {
+				textures = new Dictionary<string, Texture>(texBase.textures);
+				floats = new Dictionary<string, float>(texBase.floats);
+				colors = new Dictionary<string, Color>(texBase.colors);
+
+				scale = texBase.scale;
+				autoScale = texBase.autoScale;
+				autoWidthDivide = texBase.autoWidthDivide;
+				autoHeightDivide = texBase.autoHeightDivide;
+				autoWidthStep = texBase.autoWidthStep;
+				autoHeightStep = texBase.autoHeightStep;
+				autoMinUFactor = texBase.autoMinUFactor;
+				autoMinVFactor = texBase.autoMinVFactor;
+			}
+
+			if (node != null) {
+				if (version == 1) {
+					ParseNodeV1(node);
+				} else if (version == 2) {
+					ParseNodeV2(node);
+				} else {
+					Debug.LogError("DecouplerShroud: Unknown Texture config version: " + version);
+				}
+			}
+			
 			createMaterial();
 
 		}
@@ -105,11 +137,19 @@ namespace DecouplerShroud {
 			foreach (string s in node.GetValues("texture")) {
 				Debug.Log("[LOADING TEXTURES] "+s);
 				string[] split = s.Split(',');
+				if (split.Length < 2) {
+					Debug.LogWarning("[DecouplerShroud] texture value only has one parameter: "+ s);
+					continue;
+				}
 				RemovePropertyIfExists(textures, split[0]);
 				textures.Add(split[0], GameDatabase.Instance.GetTexture(split[1].Trim(), false));
 			}
 			foreach (string s in node.GetValues("float")) {
 				string[] split = s.Split(',');
+				if (split.Length < 2) {
+					Debug.LogWarning("[DecouplerShroud] float value only has one parameter: " + s);
+					continue;
+				}
 				RemovePropertyIfExists(floats, split[0]);
 				floats.Add(split[0], float.Parse(split[1].Trim()));
 			}
