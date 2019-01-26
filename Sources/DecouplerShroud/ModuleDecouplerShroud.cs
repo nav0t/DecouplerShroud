@@ -601,12 +601,15 @@ namespace DecouplerShroud {
 			return size;
 		}
 
+		//If decoupler is detached from engine, remove shroud and reenable stock shrouds
 		void partDetached() {
-			destroyShroud();
-			if (engineShrouds != null) {
-				if (engineShrouds.Length > 0) {
-					foreach (ModuleJettison engineShroud in engineShrouds) {
-						engineShroud.shroudHideOverride = turnedOffEngineShroud;
+			if (GetShroudedPart() == null) {
+				destroyShroud();
+				if (engineShrouds != null) {
+					if (engineShrouds.Length > 0) {
+						foreach (ModuleJettison engineShroud in engineShrouds) {
+							engineShroud.shroudHideOverride = turnedOffEngineShroud;
+						}
 					}
 				}
 			}
@@ -727,12 +730,7 @@ namespace DecouplerShroud {
 		//Creates the material for the mesh
 		void CreateMaterials() {
 			shroudMats = new Material[3];
-			Shader s = null;
-			if (HighLogic.LoadedSceneIsEditor) {
-				s = Shader.Find("KSP/Bumped Specular");
-			} else {
-				s = Shader.Find("KSP/Bumped Specular (Transparent)");
-			}
+			Shader s = Shader.Find("KSP/Bumped Specular");
 
 			for (int i = 0; i < shroudMats.Length; i++) {
 
