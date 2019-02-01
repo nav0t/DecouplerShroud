@@ -166,7 +166,6 @@ namespace DecouplerShroud {
 					createNewShroudGO();
 				}
 			}
-
 			//detectSize();
 
 			setupFinished = true;
@@ -381,6 +380,7 @@ namespace DecouplerShroud {
 
 		void changeMaterial(object arg) { changeMaterial(); }
 		void changeMaterial() {
+			Debug.Log("Change Material called");
 			ShroudTexture shroudTex = ShroudTexture.shroudTextures[textureIndex];
 
 			//save current textures name
@@ -393,6 +393,11 @@ namespace DecouplerShroud {
 				return;
 			}
 			foreach (Renderer r in shroudGO.GetComponentsInChildren<Renderer>()) {
+				foreach (Material mat in r.materials) {
+					if (mat != null)
+						Destroy(mat);
+				}
+
 				r.materials = shroudMats;
 			}
 		}
@@ -402,8 +407,13 @@ namespace DecouplerShroud {
 				Debug.LogWarning("called updateTExtureScale while shroudMats[0] == null");
 				changeMaterial();
 			}
+			foreach (Renderer r in shroudGO.GetComponentsInChildren<Renderer>()) {
+				if (r.materials != shroudMats) {
+					Debug.Log("mats not maching up!");
+				}
+			}
 
-			ShroudTexture shroudTex = ShroudTexture.shroudTextures[textureIndex];
+				ShroudTexture shroudTex = ShroudTexture.shroudTextures[textureIndex];
 
 			Vector2 sideSize = new Vector2(Mathf.Max(botWidth,topWidth), new Vector2(height,topWidth-botWidth).magnitude);
 			Vector2 topSize = new Vector2(topWidth, topWidth * thickness);
@@ -686,7 +696,7 @@ namespace DecouplerShroud {
 			if (shroudGO == null || shroudShaper == null) {
 				createNewShroudGO();
 			}
-			updateTextureScale();
+			changeMaterial();
 			shroudShaper.update();
 			shroudGO.SetActive(!invisibleShroud);
 		}
@@ -771,7 +781,7 @@ namespace DecouplerShroud {
 
 			//Ugly Fix
 			if (--Fix_SegmentChangedCallUpdateTexture > 0) {
-				updateTextureScale();
+				changeMaterial();
 			}
 
 			float alpha = distPointRay(transform.TransformPoint((vertOffset + height) / 2f * Vector3.up),Camera.main.ScreenPointToRay(Input.mousePosition)) / (botWidth + topWidth + height) * 2;

@@ -23,10 +23,14 @@ namespace DecouplerShroud {
 		public bool autoScale = false;
 		public bool autoWidthDivide = false;
 		public bool autoHeightDivide = false;
+		public bool autoCenterHeightAroundMiddle = false;
 		public float autoWidthStep = 1;
 		public float autoHeightStep = 1;
-		public float autoMinUFactor = 1;
-		public float autoMinVFactor = 1;
+
+		public float autoMinU = 1;
+		public float autoMinV = 1;
+		public float autoMaxU = 1000;
+		public float autoMaxV = 1000;
 
 		public SurfaceTexture(ConfigNode node, int version) {
 			
@@ -44,7 +48,7 @@ namespace DecouplerShroud {
 		public SurfaceTexture(ConfigNode node, SurfaceTexture texBase, int version) {
 
 			if (version == 1) {
-				Debug.LogWarning("[DecouplerShroud] Base Textures are designed for Texture Config Version 2+ (v = 2)");
+				Debug.LogWarning("[DecouplerShroud] Base Textures are designed for Texture Config Version 2+ (v = 2 in config)");
 			} else {
 				textures = new Dictionary<string, Texture>(texBase.textures);
 				floats = new Dictionary<string, float>(texBase.floats);
@@ -58,8 +62,12 @@ namespace DecouplerShroud {
 				autoHeightDivide = texBase.autoHeightDivide;
 				autoWidthStep = texBase.autoWidthStep;
 				autoHeightStep = texBase.autoHeightStep;
-				autoMinUFactor = texBase.autoMinUFactor;
-				autoMinVFactor = texBase.autoMinVFactor;
+
+				autoMinU = texBase.autoMinU;
+				autoMinV = texBase.autoMinV;
+				autoMaxU = texBase.autoMaxU;
+				autoMaxV = texBase.autoMaxV;
+				autoCenterHeightAroundMiddle = texBase.autoCenterHeightAroundMiddle;
 			}
 
 			if (node != null) {
@@ -228,53 +236,88 @@ namespace DecouplerShroud {
 				bool.TryParse(node.GetValue("autoWidthDivide"), out autoWidthDivide);
 			if (node.HasValue("autoHeightDivide"))
 				bool.TryParse(node.GetValue("autoHeightDivide"), out autoHeightDivide);
+			if (node.HasValue("autoCenterHeightAroundMiddle"))
+				bool.TryParse(node.GetValue("autoCenterHeightAroundMiddle"), out autoCenterHeightAroundMiddle);
 			if (node.HasValue("autoWidthStep"))
 				float.TryParse(node.GetValue("autoWidthStep"), out autoWidthStep);
 			if (node.HasValue("autoHeightStep"))
 				float.TryParse(node.GetValue("autoHeightStep"), out autoHeightStep);
 
-			if (node.HasValue("autoMinUFactor"))
-				float.TryParse(node.GetValue("autoMinUFactor"), out autoMinUFactor);
-			if (node.HasValue("autoMinVFactor"))
-				float.TryParse(node.GetValue("autoMinVFactor"), out autoMinVFactor);
+			//This is to not have the factor variables deprecated
+			if (node.HasValue("autoMinUFactor")) {
+				float.TryParse(node.GetValue("autoMinUFactor"), out autoMinU);
+				autoMinU *= scale.x;
+			}
+			if (node.HasValue("autoMinVFactor")) {
+				float.TryParse(node.GetValue("autoMinVFactor"), out autoMinV);
+				autoMinV *= scale.y;
+			}
+			if (node.HasValue("autoMaxUFactor")) {
+				float.TryParse(node.GetValue("autoMaxUFactor"), out autoMaxU);
+				autoMaxU *= scale.x;
+			}
+			if (node.HasValue("autoMaxVFactor")) {
+				float.TryParse(node.GetValue("autoMaxVFactor"), out autoMaxV);
+				autoMaxV *= scale.y;
+			}
+
+			if (node.HasValue("autoMinU"))
+				float.TryParse(node.GetValue("autoMinU"), out autoMinU);
+			if (node.HasValue("autoMinV"))
+				float.TryParse(node.GetValue("autoMinV"), out autoMinV);
+
+			if (node.HasValue("autoMaxU"))
+				float.TryParse(node.GetValue("autoMaxU"), out autoMaxU);
+			if (node.HasValue("autoMaxV"))
+				float.TryParse(node.GetValue("autoMaxV"), out autoMaxV);
 		}
 
 		public void SetTextureScale(Material m, Vector2 size) {
 			Vector2 uvScale = scale;
-
-			if (autoWidthDivide) {
-				size /= size.x;
-			}
-			if (autoHeightDivide) {
-				size /= size.y;
-			}
+			Debug.Log("\n"+textures.ToArray()[0].Value);
+			Debug.Log("SCALING\n" + uvScale + ", "+size);
+			
 			if (autoScale) {
-				size.x = roundScaleToStep(size.x, autoWidthStep, autoMinUFactor);
-				size.y = roundScaleToStep(size.y, autoHeightStep, autoMinVFactor);
-				uvScale.Scale(size);
+				if (autoWidthDivide) {
+					size /= size.x;
+				}
+				if (autoHeightDivide) {
+					size /= size.y;
+				}
+				Debug.Log(size);
+				size.x = roundScaleToStep(size.x, autoWidthStep);
+				size.y = roundScaleToStep(size.y, autoHeightStep);
+				uvScale.x = Mathf.Clamp(size.x * uvScale.x, autoMinU, autoMaxU);
+				uvScale.y = Mathf.Clamp(size.y * uvScale.y, autoMinV, autoMaxV);
+
 			}
 
+			Debug.Log(uvScale);
 			foreach (KeyValuePair<string, Texture> t in textures) {
 				if (m.HasProperty(t.Key)) {
+					Debug.Log(uvScale+", "+t.Value);
+
 					m.SetTextureScale(t.Key, uvScale);
+					
+					if (autoCenterHeightAroundMiddle) {
+						m.SetTextureOffset(t.Key, new Vector2(0, 0.5f - uvScale.y / 2));
+					}
 				}
 			}
 		}
 
-		float roundScaleToStep(float s, float step, float minScale) {
+		float roundScaleToStep(float scale, float step) {
 			if (step > 0) {
 				
-				s -= 1;
-				s /= step;
-				s = Mathf.Round(s);
-				s *= step;
-				s += 1;
+				scale -= 1;
+				scale /= step;
+				scale = Mathf.Round(scale);
+				scale *= step;
+				scale += 1;
 				
 			}
-			if (s < minScale) {
-				return minScale;
-			}
-			return s;
+			
+			return scale;
 		}
 
 	}
