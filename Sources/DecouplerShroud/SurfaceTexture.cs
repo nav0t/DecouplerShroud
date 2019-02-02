@@ -274,8 +274,6 @@ namespace DecouplerShroud {
 
 		public void SetTextureScale(Material m, Vector2 size) {
 			Vector2 uvScale = scale;
-			Debug.Log("\n"+textures.ToArray()[0].Value);
-			Debug.Log("SCALING\n" + uvScale + ", "+size);
 			
 			if (autoScale) {
 				if (autoWidthDivide) {
@@ -284,7 +282,6 @@ namespace DecouplerShroud {
 				if (autoHeightDivide) {
 					size /= size.y;
 				}
-				Debug.Log(size);
 				size.x = roundScaleToStep(size.x, autoWidthStep);
 				size.y = roundScaleToStep(size.y, autoHeightStep);
 				uvScale.x = Mathf.Clamp(size.x * uvScale.x, autoMinU, autoMaxU);
@@ -292,11 +289,8 @@ namespace DecouplerShroud {
 
 			}
 
-			Debug.Log(uvScale);
 			foreach (KeyValuePair<string, Texture> t in textures) {
 				if (m.HasProperty(t.Key)) {
-					Debug.Log(uvScale+", "+t.Value);
-
 					m.SetTextureScale(t.Key, uvScale);
 					
 					if (autoCenterHeightAroundMiddle) {

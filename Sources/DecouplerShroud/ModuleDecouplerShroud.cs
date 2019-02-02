@@ -380,7 +380,6 @@ namespace DecouplerShroud {
 
 		void changeMaterial(object arg) { changeMaterial(); }
 		void changeMaterial() {
-			Debug.Log("Change Material called");
 			ShroudTexture shroudTex = ShroudTexture.shroudTextures[textureIndex];
 
 			//save current textures name
@@ -388,18 +387,6 @@ namespace DecouplerShroud {
 			CreateMaterials(shroudTex);
 
 			updateTextureScale();
-
-			if (shroudGO == null) {
-				return;
-			}
-			foreach (Renderer r in shroudGO.GetComponentsInChildren<Renderer>()) {
-				foreach (Material mat in r.materials) {
-					if (mat != null)
-						Destroy(mat);
-				}
-
-				r.materials = shroudMats;
-			}
 		}
 
 		void updateTextureScale() {
@@ -407,13 +394,8 @@ namespace DecouplerShroud {
 				Debug.LogWarning("called updateTExtureScale while shroudMats[0] == null");
 				changeMaterial();
 			}
-			foreach (Renderer r in shroudGO.GetComponentsInChildren<Renderer>()) {
-				if (r.materials != shroudMats) {
-					Debug.Log("mats not maching up!");
-				}
-			}
 
-				ShroudTexture shroudTex = ShroudTexture.shroudTextures[textureIndex];
+			ShroudTexture shroudTex = ShroudTexture.shroudTextures[textureIndex];
 
 			Vector2 sideSize = new Vector2(Mathf.Max(botWidth,topWidth), new Vector2(height,topWidth-botWidth).magnitude);
 			Vector2 topSize = new Vector2(topWidth, topWidth * thickness);
@@ -422,6 +404,18 @@ namespace DecouplerShroud {
 			shroudTex.textures[1].SetTextureScale(shroudMats[1], topSize);
 			shroudTex.textures[2].SetTextureScale(shroudMats[2], sideSize);
 
+			if (shroudGO == null) {
+				return;
+			}
+			foreach (Renderer r in shroudGO.GetComponentsInChildren<Renderer>()) {
+				if (r.materials != shroudMats) {
+					foreach (Material mat in r.materials) {
+						if (mat != null)
+							Destroy(mat);
+					}
+					r.materials = shroudMats;
+				}
+			}
 		}
 
 		//Creates the material for the mesh
@@ -439,13 +433,12 @@ namespace DecouplerShroud {
 			for (int i = 0; i < shroudMats.Length; i++) {
 
 				SurfaceTexture surf = shroudTex.textures[i];
-				//Debug.Log(surf.shader);
-				Shader s = Shader.Find(surf.shader);
 
 				shroudMats[i] = Instantiate(surf.mat);
 				shroudMats[i].name = "shroudMat: " + i + ", " + segments + " segments";
 
 				if (HighLogic.LoadedSceneIsEditor) {
+					// Enables transparency in editor
 					shroudMats[i].renderQueue = 3000;
 				}
 			}
@@ -696,7 +689,7 @@ namespace DecouplerShroud {
 			if (shroudGO == null || shroudShaper == null) {
 				createNewShroudGO();
 			}
-			changeMaterial();
+			updateTextureScale();
 			shroudShaper.update();
 			shroudGO.SetActive(!invisibleShroud);
 		}
@@ -781,7 +774,7 @@ namespace DecouplerShroud {
 
 			//Ugly Fix
 			if (--Fix_SegmentChangedCallUpdateTexture > 0) {
-				changeMaterial();
+				updateTextureScale();
 			}
 
 			float alpha = distPointRay(transform.TransformPoint((vertOffset + height) / 2f * Vector3.up),Camera.main.ScreenPointToRay(Input.mousePosition)) / (botWidth + topWidth + height) * 2;
