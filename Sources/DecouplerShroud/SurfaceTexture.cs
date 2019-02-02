@@ -116,7 +116,7 @@ namespace DecouplerShroud {
 				foreach (ConfigNode m in node.GetNodes("MaterialVariant")) {
 					if (m.HasValue("shader")) {
 						if (getShader(m.GetValue("shader")) == null) {
-							Debug.Log("[DecouplerShroud] Didn't find shader: " + m.GetValue("shader"));
+							//Debug.Log("[DecouplerShroud] Didn't find shader: " + m.GetValue("shader")+", switching to fallback");
 							continue;
 						}
 						if (texBaseShader != "" && texBaseShader != m.GetValue("shader")) {

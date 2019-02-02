@@ -100,7 +100,7 @@ namespace DecouplerShroud {
 			tex.textures.Add(new SurfaceTexture(node.GetNode("top"), texBase.textures[1], v));
 			tex.textures.Add(new SurfaceTexture(node.GetNode("inside"), texBase.textures[2], v));
 			shroudTextures.Add(tex);
-			Debug.Log("[DecouplerShroud] Loaded ShroudedTexture: "+tex.name + " base: "+texBase.name);
+			//Debug.Log("[DecouplerShroud] Loaded ShroudedTexture: "+tex.name + " base: "+texBase.name);
 
 			if (waiting.ContainsValue(tex.name)) {
 				foreach (KeyValuePair<ConfigNode, string> p in waiting) {

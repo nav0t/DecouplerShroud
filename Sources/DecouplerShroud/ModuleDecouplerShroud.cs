@@ -98,7 +98,8 @@ namespace DecouplerShroud {
 		//otherwise the transparency of the outside shroud is constant for some reason
 		int Fix_SegmentChangedCallUpdateTexture = 0;
 
-		//true when decoupler has no grandparent in the editor
+		//true when decoupler has no grandparent in the editor and automatic size detection is active
+		[KSPField(isPersistant = true)]
 		public bool invisibleShroud;
 
 		//Variables for detecting wheter automatic size needs to be recalculated
@@ -114,7 +115,8 @@ namespace DecouplerShroud {
 		DragCubeList starDragCubes;
 
 		public void setup() {
-			Debug.Log("[Decoupler Shroud] jet: " + jettisoned + ", attached: " + part.isAttached);
+			//Debug.Log("[Decoupler Shroud] jet: " + jettisoned + ", attached: " + part.isAttached + ", inv: "+invisibleShroud);
+			
 			//Get rid of decoupler shroud module if no top node found
 			if (destroyShroudIfNoTopNode()) {
 				return;
@@ -155,17 +157,11 @@ namespace DecouplerShroud {
 			setButtonActive();
 
 			if (HighLogic.LoadedSceneIsFlight) {
-				if (part.isAttached) {
-					createNewShroudGO();
-					if (GetShroudedPart() != null && shroudEnabled) {
-						GetShroudedPart().AddShield(this);
-					}
-				}
-			} else {
-				if (part.isAttached) {
-					createNewShroudGO();
+				if (GetShroudedPart() != null && shroudEnabled) {
+					GetShroudedPart().AddShield(this);
 				}
 			}
+			createNewShroudGO();
 			//detectSize();
 
 			setupFinished = true;
@@ -390,9 +386,14 @@ namespace DecouplerShroud {
 		}
 
 		void updateTextureScale() {
+			if (shroudMats == null) {
+				changeMaterial();
+				return;
+			}
 			if (shroudMats[0] == null) {
 				Debug.LogWarning("called updateTExtureScale while shroudMats[0] == null");
 				changeMaterial();
+				return;
 			}
 
 			ShroudTexture shroudTex = ShroudTexture.shroudTextures[textureIndex];
@@ -456,12 +457,14 @@ namespace DecouplerShroud {
 		void detectSize(object arg) { detectSize(); }
 		void detectSize() {
 
+			if(!HighLogic.LoadedSceneIsEditor){
+				return;
+			}
 
 			invisibleShroud = false;
 			
-
 			//Check if the size has to be reset
-			if (!autoDetectSize || !HighLogic.LoadedSceneIsEditor || !part.isAttached || !shroudEnabled) {
+			if (!autoDetectSize || !part.isAttached || !shroudEnabled) {
 				return;
 			}
 
@@ -523,7 +526,7 @@ namespace DecouplerShroud {
 					if (shroudAttatchedPart.collider is MeshCollider) {
 						mc = (MeshCollider)shroudAttatchedPart.collider;
 					} else {
-						Debug.Log("attached collider is "+ shroudAttatchedPart.collider.GetType().ToString());
+						//Debug.LogWarning("[DecouplerShroud] attached collider is "+ shroudAttatchedPart.collider.GetType().ToString());
 					}
 
 					if (mc != null) {
@@ -581,7 +584,7 @@ namespace DecouplerShroud {
 				invisibleShroud = true;
 				topWidth = botWidth;
 			}
-			
+
 			//Update shroud mesh
 			if (shroudGO != null) {
 				updateShroud();
@@ -694,7 +697,9 @@ namespace DecouplerShroud {
 			}
 			updateTextureScale();
 			shroudShaper.update();
-			shroudGO.SetActive(!invisibleShroud);
+			if (shroudGO != null) {
+				shroudGO.SetActive(!invisibleShroud);
+			}
 		}
 
 		//Recalculates the drag cubes for the model
@@ -767,6 +772,8 @@ namespace DecouplerShroud {
 			Fix_SegmentChangedCallUpdateTexture = 5;
 
 			generateDragCube();
+
+			shroudGO.SetActive(!invisibleShroud);
 		}
 
 
