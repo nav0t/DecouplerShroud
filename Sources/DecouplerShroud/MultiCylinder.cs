@@ -65,7 +65,7 @@ namespace DecouplerShroud {
 
 			foreach (Cylinder c in cylinders) {
 				c.segments = segments;
-				c.startUVal = -.25f + (segmentIndex) / (float)segments;
+				c.startUVal = (segmentIndex) / (float)segments;
 				ringCount += c.rings;
 			}
 
@@ -92,8 +92,8 @@ namespace DecouplerShroud {
 
 			//Generate the sides
 			if (hasSides && segments > 1) {
-				float ang1 = (-.25f + segmentIndex / (float)segments) * 2 * Mathf.PI;
-				float ang2 = (-.25f + segmentIndex / (float)segments + 1 / (float) segments) * 2 * Mathf.PI;
+				float ang1 = (segmentIndex / (float)segments) * 2 * Mathf.PI;
+				float ang2 = (segmentIndex / (float)segments + 1 / (float) segments) * 2 * Mathf.PI;
 				GenerateSides(verts, uvs, tris[tris.Length - 1], nors, ang1, ang2);
 			}
 
@@ -119,7 +119,7 @@ namespace DecouplerShroud {
 			int ringOffset = 0;
 			for (int i = 0; i < cylinders.Length; i++) {
 				cylinders[i].segments = segments;
-				cylinders[i].startUVal = -.25f + (segmentIndex) / (float)segments;
+				cylinders[i].startUVal = (segmentIndex) / (float)segments;
 
 				cylinders[i].UpdateCylinder(ringOffset, verts, nors, tans);
 				ringOffset += cylinders[i].rings;
@@ -127,8 +127,8 @@ namespace DecouplerShroud {
 
 			//Generate the sides
 			if (hasSides && segments > 1) {
-				float ang1 = (-.25f + segmentIndex / (float)segments) * 2 * Mathf.PI;
-				float ang2 = (-.25f + segmentIndex / (float)segments + 1 / (float)segments) * 2 * Mathf.PI;
+				float ang1 = (segmentIndex / (float)segments) * 2 * Mathf.PI;
+				float ang2 = (segmentIndex / (float)segments + 1 / (float)segments) * 2 * Mathf.PI;
 				UpdateSides(verts, ang1, ang2);
 			}
 

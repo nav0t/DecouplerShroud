@@ -114,7 +114,7 @@ namespace DecouplerShroud {
 		DragCubeList starDragCubes;
 
 		public void setup() {
-
+			Debug.Log("[Decoupler Shroud] jet: " + jettisoned + ", attached: " + part.isAttached);
 			//Get rid of decoupler shroud module if no top node found
 			if (destroyShroudIfNoTopNode()) {
 				return;
@@ -276,7 +276,7 @@ namespace DecouplerShroud {
 				physicalObject ph = c.AddComponent<physicalObject>();
 				ph.rb = c.AddComponent<Rigidbody>();
 
-				float ang = -Mathf.PI / 2 + 2 * Mathf.PI * (i+.5f) / (float)segments;
+				float ang = 2 * Mathf.PI * (i+.5f) / (float)segments;
 				ph.rb.AddRelativeForce(new Vector3(Mathf.Cos(ang),0,Mathf.Sin(ang)) * jettisonVelocity, ForceMode.VelocityChange);
 			}
 			shroudGO.transform.DetachChildren();
