@@ -644,12 +644,15 @@ namespace DecouplerShroud {
 			return size;
 		}
 
+		//If decoupler is detached from engine, remove shroud and reenable stock shrouds
 		void partDetached() {
-			destroyShroud();
-			if (engineShrouds != null) {
-				if (engineShrouds.Length > 0) {
-					foreach (ModuleJettison engineShroud in engineShrouds) {
-						engineShroud.shroudHideOverride = turnedOffEngineShroud;
+			if (GetShroudedPart() == null) {
+				destroyShroud();
+				if (engineShrouds != null) {
+					if (engineShrouds.Length > 0) {
+						foreach (ModuleJettison engineShroud in engineShrouds) {
+							engineShroud.shroudHideOverride = turnedOffEngineShroud;
+						}
 					}
 				}
 			}
