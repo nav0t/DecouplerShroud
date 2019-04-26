@@ -286,7 +286,7 @@ namespace DecouplerShroud
 
 			string[] options = new string[ShroudTexture.shroudTextures.Count];
 			for (int i = 0; i < options.Length; i++) {
-				options[i] = ShroudTexture.shroudTextures[i].name;
+				options[i] = ShroudTexture.shroudTextures[i].displayName;
 
 				//Sets textureindex to the saved texture
 				if (options[i].Equals(textureName)) {
@@ -696,16 +696,17 @@ namespace DecouplerShroud
 			}
 
 			updateTextureScale();
-			
-			if (isFarInstalled()) {
-				part.SendMessage("GeometryPartModuleRebuildMeshData");
-			}
 
 			shroudShaper.update();
 			if (shroudGO != null) {
 				shroudGO.SetActive(!invisibleShroud);
 			}
-		}
+
+            if (isFarInstalled())
+            {
+                part.SendMessage("GeometryPartModuleRebuildMeshData");
+            }
+        }
 
 		//Recalculates the drag cubes for the model
 		void generateDragCube() {

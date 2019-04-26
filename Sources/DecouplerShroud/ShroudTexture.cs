@@ -7,6 +7,7 @@ namespace DecouplerShroud {
 
 
 		public string name = "ERR";
+        public string displayName = "ERR";
 		public List<SurfaceTexture> textures;
 		
 		public ShroudTexture() {
@@ -59,12 +60,28 @@ namespace DecouplerShroud {
 			ShroudTexture tex = new ShroudTexture();
 			if (node.HasValue("name")) {
 				tex.name = node.GetValue("name");
+                tex.displayName = tex.name;
+                if (getShroudTextureByName(tex.name) != null) {
+                    Debug.LogError("[DecouplerShroud] ShroudTexture already exists with name: "+ tex.name);
+					return;
+                }
+
 			} else {
 				Debug.LogError("[DecouplerShroud] ShroudTexture needs Name");
 				return;
 			}
 
-			tex.textures.Add(new SurfaceTexture(node.GetNode("outside"), v));
+            if (node.HasValue("displayName")) {
+                tex.displayName = node.GetValue("displayName");
+				Debug.Log("Changed Display Name to: " + tex.displayName);
+            }
+
+			if (!node.HasNode("outside") || !node.HasNode("top") || !node.HasNode("inside")) {
+				Debug.LogError("[DecouplerShroud] texture config needs outside, top, inside nodes if no base is given. Texutre Name: " + tex.name);
+				return;
+			}
+
+            tex.textures.Add(new SurfaceTexture(node.GetNode("outside"), v));
 			tex.textures.Add(new SurfaceTexture(node.GetNode("top"), v));
 			tex.textures.Add(new SurfaceTexture(node.GetNode("inside"), v));
 			shroudTextures.Add(tex);
@@ -88,15 +105,25 @@ namespace DecouplerShroud {
 			ShroudTexture tex = new ShroudTexture();
 			if (node.HasValue("name")) {
 				tex.name = node.GetValue("name");
+				tex.displayName = tex.name;
+				if (getShroudTextureByName(tex.name) != null) {
+					Debug.LogError("[DecouplerShroud] ShroudTexture already exists with name: " + tex.name);
+					return;
+				}
 			} else {
 				Debug.LogError("[DecouplerShroud] ShroudTexture needs Name");
 				return;
 			}
-			tex.textures.Add(new SurfaceTexture(node.GetNode("outside"), texBase.textures[0], v));
+			if (node.HasValue("displayName"))
+            {
+                tex.displayName = node.GetValue("displayName");
+            }
+
+            tex.textures.Add(new SurfaceTexture(node.GetNode("outside"), texBase.textures[0], v));
 			tex.textures.Add(new SurfaceTexture(node.GetNode("top"), texBase.textures[1], v));
 			tex.textures.Add(new SurfaceTexture(node.GetNode("inside"), texBase.textures[2], v));
 			shroudTextures.Add(tex);
-			//Debug.Log("[DecouplerShroud] Loaded ShroudedTexture: "+tex.name + " base: "+texBase.name);
+			Debug.Log("[DecouplerShroud] Loaded ShroudedTexture: "+tex.name + " with base: "+texBase.name);
 
 			if (waiting.ContainsValue(tex.name)) {
 				foreach (KeyValuePair<ConfigNode, string> p in waiting) {
