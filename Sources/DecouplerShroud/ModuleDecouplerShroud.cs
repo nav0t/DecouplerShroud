@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 
-namespace DecouplerShroud {
-	public class ModuleDecouplerShroud : PartModule, IAirstreamShield {
+namespace DecouplerShroud
+{
+    public class ModuleDecouplerShroud : PartModule, IAirstreamShield {
 
 		float[] snapSizes = new float[] { .63f , 1.25f, 2.5f, 3.75f, 5f, 7.5f};
 		int[] segmentCountLUT =   new int[] { 1, 2, 3, 4, 6 };
@@ -111,7 +108,7 @@ namespace DecouplerShroud {
 		Part lastShroudAttachedPart;
 		Part lastShroudedPart = null;
 
-		DragCubeList starDragCubes;
+		DragCubeList stockDragCubes;
 
 		public void setup() {
 
@@ -125,7 +122,7 @@ namespace DecouplerShroud {
 			collPerSegment = collPerSegmentLUT[segmentIndex];
 			//Debug.Log("!!set segment count to: " + segments + ", Index: " + segmentIndex);
 
-			starDragCubes = part.DragCubes;
+			stockDragCubes = part.DragCubes;
 			getTextureNames();
 			//Remove copied decoupler shroud when copied
 			Transform copiedDecouplerShroud = transform.Find("DecouplerShroud");
@@ -155,12 +152,11 @@ namespace DecouplerShroud {
 			setButtonActive();
 
 			if (HighLogic.LoadedSceneIsFlight) {
-				if (part.isAttached) {
-					createNewShroudGO();
-					if (GetShroudedPart() != null && shroudEnabled) {
-						GetShroudedPart().AddShield(this);
-					}
+				createNewShroudGO();
+				if (GetShroudedPart() != null && shroudEnabled) {
+					GetShroudedPart().AddShield(this);
 				}
+				
 			} else {
 				if (part.isAttached) {
 					createNewShroudGO();
@@ -168,7 +164,6 @@ namespace DecouplerShroud {
 			}
 
 			//detectSize();
-
 			setupFinished = true;
 		}
 
@@ -350,6 +345,9 @@ namespace DecouplerShroud {
 		void setButtonActive(object arg) { setButtonActive(); }
 		void setButtonActive() {
 
+            if (!HighLogic.LoadedSceneIsEditor)
+                return;
+
 			if (shroudEnabled) {
 				Fields[nameof(autoDetectSize)].guiActiveEditor = true;
 				Fields[nameof(segmentIndex)].guiActiveEditor = true;
@@ -437,7 +435,7 @@ namespace DecouplerShroud {
 					if (part.collider is MeshCollider) {
 						mc = (MeshCollider)part.collider;
 					} else {
-						Debug.Log("part collider is " + part.collider.GetType().ToString());
+						//Debug.Log("part collider is " + part.collider.GetType().ToString());
 					}
 
 					if (mc != null) {
@@ -649,6 +647,10 @@ namespace DecouplerShroud {
 			if (shroudGO == null || shroudShaper == null) {
 				createNewShroudGO();
 			}
+			if (isFarInstalled()) {
+				part.SendMessage("GeometryPartModuleRebuildMeshData");
+			}
+
 			updateTexture();
 			shroudShaper.update();
 			shroudGO.SetActive(!invisibleShroud);
@@ -657,18 +659,28 @@ namespace DecouplerShroud {
 		//Recalculates the drag cubes for the model
 		void generateDragCube() {
 
+
+			if (isFarInstalled()) {
+				Debug.Log("[Debug] Updating FAR Voxels");
+				part.SendMessage("GeometryPartModuleRebuildMeshData");
+			}
+
 			if (shroudEnabled && HighLogic.LoadedSceneIsFlight) {
 				//Calculate dragcube for the cone manually
 				DragCube dc = DragCubeSystem.Instance.RenderProceduralDragCube(part);
 				part.DragCubes.ClearCubes();
 				part.DragCubes.Cubes.Add(dc);
 				part.DragCubes.ResetCubeWeights();
+				part.DragCubes.ForceUpdate(true,true,false);
 
 			}
 		}
 
 		//Create the gameObject with the meshrenderer
 		void createNewShroudGO() {
+
+            //Debug.Log("[Debug] createNewShroudGO called, shroudEnabled: "+shroudEnabled+", jettisoned: "+jettisoned);
+
 			if (!shroudEnabled || jettisoned) {
 				return;
 			}
@@ -853,5 +865,31 @@ namespace DecouplerShroud {
 		public Part GetPart() {
 			return part;
 		}
+
+		public static bool FARinstalled, FARchecked;
+		public static bool isFarInstalled() {
+            
+            // FAR support doesn't work yet, so let's just pretend it is not installed
+            return false; 
+            
+			if (!FARchecked) {
+				var asmlist = AssemblyLoader.loadedAssemblies;
+
+				if (asmlist != null) {
+					for (int i = 0; i < asmlist.Count; i++) {
+						if (asmlist[i].name == "FerramAerospaceResearch") {
+							FARinstalled = true;
+
+							break;
+						}
+					}
+				}
+				Debug.Log("[Debug] Far installed: "+FARinstalled);
+				FARchecked = true;
+			}
+
+			return FARinstalled;
+		}
+
 	}
 }
