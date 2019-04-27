@@ -116,7 +116,7 @@ namespace DecouplerShroud {
 			tex.textures.Add(new SurfaceTexture(node.GetNode("top"), v));
 			tex.textures.Add(new SurfaceTexture(node.GetNode("inside"), v));
 			shroudTextureDictionary.Add(tex.name, tex);
-			Debug.Log("[DecouplerShroud] Loaded ShroudedTexture: " + tex.name);
+			Debug.Log("[DecouplerShroud] Loaded ShroudedTexture: " + tex.name + "(outside shader = " + tex.textures[0].shader + ")");
 
 			// Check if this is the base of a texture in the waiting list, if so parse all textures waiting for this texture
 			List<ConfigNode> waitingForMe;
@@ -157,7 +157,7 @@ namespace DecouplerShroud {
 			tex.textures.Add(new SurfaceTexture(node.GetNode("top"), texBase.textures[1], v));
 			tex.textures.Add(new SurfaceTexture(node.GetNode("inside"), texBase.textures[2], v));
 			shroudTextureDictionary.Add(tex.name, tex);
-			Debug.Log("[DecouplerShroud] Loaded ShroudedTexture: "+tex.name + " with base: "+texBase.name);
+			Debug.Log("[DecouplerShroud] Loaded ShroudedTexture: "+tex.name + "(outside shader = "+tex.textures[0].shader+") with base: "+texBase.name);
 
 			// Check if this is the base of a texture in the waiting list, if so parse all textures waiting for this texture
 			List<ConfigNode> waitingForMe;
