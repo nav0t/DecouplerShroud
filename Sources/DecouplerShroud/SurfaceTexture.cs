@@ -43,9 +43,9 @@ namespace DecouplerShroud {
 		}
 
 		public SurfaceTexture(ConfigNode node, SurfaceTexture texBase, int version) {
-
+			
 			if (version == 1) {
-				Debug.LogWarning("[DecouplerShroud] Base Textures are designed for Texture Config Version 2+ (v = 2 in config)");
+				Debug.LogWarning("[DecouplerShroud] Base Textures are designed for Texture Config Version 2+ (v = 2 not in config)");
 			} else {
 				textures = new Dictionary<string, Texture>(texBase.textures);
 				floats = new Dictionary<string, float>(texBase.floats);
@@ -177,6 +177,10 @@ namespace DecouplerShroud {
 			}
 			foreach (string s in node.GetValues("color")) {
 				string[] split = s.Split(',');
+				if (split.Length < 4) {
+					Debug.LogWarning("[DecouplerShroud] color value too few parameter: " + s);
+					continue;
+				}
 				RemovePropertyIfExists(colors, split[0]);
 				colors.Add(split[0], ConfigNode.ParseColor(s.Substring(split[0].Length).Trim()));
 			}
