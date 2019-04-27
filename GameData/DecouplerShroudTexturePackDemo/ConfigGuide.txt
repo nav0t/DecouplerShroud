@@ -1,0 +1,150 @@
+// ||============================================================||
+// || Note:                                                      ||
+// || This is meant to show the parameters and how to use them.  ||
+// || If you want to create a config file I would reccommend     ||
+// || basing it on one of the default texture config files       ||
+// ||============================================================||
+
+ShroudTexture {
+	// [REQUIRED] name has to be a unique identifier. 
+	// This name is used to save which texture is used on which decoupler
+	name = Unique_Name123
+
+	// displayName is the name which is shown in the VAB.
+	// Unlike the parameter 'name' it doesn't have to be unique.
+	// If omitted, value set for parameter 'name' is used.
+	displayName = Name123
+
+	// This indicates which version this config file is. 
+	// This is here for backwards compatibility with old texture packs.
+	// If omitted, it defaults to 1
+	v = 2
+
+	// The base Texture is loaded first. First, all of the parameters of the base textures
+	// 'outside', 'top' and 'inside' blocks are used for this texture.
+	// Then all the parameters set in this file overwrite any parameters set in the base File.
+	// This greatly reduces the length of config files.
+	// If omitted, no base is used.
+	base = Default
+
+	// showInVAB indicates whether a texture can be selected in the VAB menu.
+	// This can be used to make a base only texture, that can be referenced by other textures
+	// but can't be selected by a player.
+	// If omitted, it defaults to true.
+	showInVAB = true
+
+	// Every texture needs outside, top and inside block (unless a base is used).
+	// Each block defines a different material for a different part of the shroud.
+	// If a base is used, whole blocks can be omitted.
+	outside {
+
+		// MaterialVariant blocks are used to make the mod work with different shaders.
+		// MaterialVariant blocks are applied last and overwrite parameters set directly in the 'outside' block.
+		// Only one (or no) MaterialVariant block is applied at a time.
+		// The first block from the top with an installed shader is used if the texture has no base.
+		// If the texture has a base, it will use the block with the same shader that is used in the base (or none).
+		// In this case, if Textures unlimited is installed, the first MaterialVariant block is used,
+		// if the KSP version is 1.5 or higher (when the shader was added to KSP) the second block is used,
+		// otherwise no MaterialVariant block is used
+		MaterialVariant {
+
+			// shader dictates the shader which is used for the material
+			// if omitted, it defaults to KSP/Bumped Specular
+			shader = TU/Specular
+
+			// The texture, color and float parameters are used to directly set shader parameters
+			// texture = ParameterName, Texturepath
+			texture = _SpecGlossMap, DecouplerShroud/Textures/SurfDefault
+			// color = ParameterName, r, g, b(, a)
+			color = _SpecColor, .1, 1, .3, 1
+			// float = ParameterName, value
+			float = _Smoothness, .3
+		}
+
+		// See previous MaterialVariant block. There can be any number of MaterialVariant blocks
+		MaterialVariant {
+			shader = KSP/Bumped Specular (Mapped)
+			texture = _SpecMap, DecouplerShroud/Textures/Test
+		}
+		
+		// Values that are set outside MaterialVariant blocks get set no matter which shader is used.
+		// The values set here can be overwritten by MaterialVariant blocks
+		shader = KSP/Bumped Specular
+		texture = _MainTex, DecouplerShroud/Textures/SurfDefault
+		texture = _BumpMap, DecouplerShroud/Textures/SurfDefaultNor
+		float = _Smoothness, .3
+
+
+		// Texture scaling options:
+		
+		// uScale indicates how often the texture is repeated horizontally around the cylinder.
+		// If omitted, it defaults to 1.
+		uScale = 2
+
+		// vScale indicates how often the texture is repeated vertically.
+		// If omitted, it defaults to 1.
+		vScale = 1
+
+		// Texture scaling based on shroud size:
+		// autoScale has to be set to true if the texture scaling should depend on the shroud size.
+		// If omitted, it defaults to false
+		autoScale = false
+
+		// if autoScale is set to true, the following parameters are used to alter the uScale and vScale
+		// according to the following pseudo code:
+
+		//  xFactor = shroudRadius
+		//  yFactor = shroudHeight
+		//
+		// 	if (autoWidthDivide is true) {
+		// 		xFactor = 1
+		//		yFactor = xFactor / xFactor
+		//	}
+		//	if (autoHeightDivide is true) {
+		//		xFactor = xFactor / yFactor
+		//		yFactor = 1
+		//	}
+		//	xFactor = roundToStep(xFactor, autoWidthStep)
+		//	yFactor = roundToStep(yFactor, autoHeightStep)
+		//	uScale = Clamp(xFactor * uScale, autoMinU, autoMaxU)
+		//	vScale = Clamp(yFactor * vScale, autoMinV, autoMaxV)
+
+		// autoWidthDivide should be used if you want the texture to go around the cylinder once, and tile vertically based on the height to radius ratio.
+		// If using this for example a 1x5m and a 2x10m shroud would have the same texture scaling.
+		// If omitted, it defaults to 1.
+		autoWidthDivide = false
+
+		// autoHeightDivide is the same but it will not repeated vertically, and tile around the cylinder based on the height to radius ratio.
+		// If using this for example a 1x5m and a 2x10m shroud would have the same texture scaling.
+		// If omitted, it defaults to false
+		autoHeightDivide = false
+
+		// autoWidthStep and autoHeightStep can be used to increase the uScale and vScale incrementally.
+		// For Example if set to 0.5 uScale / vScale could take the values: 0.5, 1, 1.5, 2, 2.5, ... 
+		// To disable, set to 0.
+		// If omitted, it defaults to 1.
+		autoWidthStep = 1
+		autoHeightStep = 1
+
+		// The following parameters can be used to clamp the scaling to an acceptable range
+		// the defaults used when omitted are the ones used below
+		autoMinU = 1
+		autoMaxU = 1000
+		autoMinV = 1
+		autoMaxV = 1000
+
+		// autoCenterHeightAroundMiddle centers the texture vertically around the image center. This is useful for logos.
+		// If omitted, it defaults to false.
+		autoCenterHeightAroundMiddle = false
+
+	}
+
+	// Same contents as in the 'outside' block
+	top {
+		// This whole block can be left blank or omitted completely if a base is used
+	}
+	// Same contents as in the 'outside' block
+	inside {
+		// This whole block can be left blank or omitted completely if a base is used
+	}
+}
