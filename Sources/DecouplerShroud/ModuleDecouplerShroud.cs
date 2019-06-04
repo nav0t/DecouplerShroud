@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 
-namespace DecouplerShroud {
-	public class ModuleDecouplerShroud : PartModule, IAirstreamShield {
+namespace DecouplerShroud
+{
+    public class ModuleDecouplerShroud : PartModule, IAirstreamShield {
 
 		float[] snapSizes = new float[] { .63f , 1.25f, 2.5f, 3.75f, 5f, 7.5f};
 		int[] segmentCountLUT =   new int[] { 1, 2, 3, 4, 6 };
@@ -111,7 +108,8 @@ namespace DecouplerShroud {
 		//otherwise the transparency of the outside shroud is constant for some reason
 		int Fix_SegmentChangedCallUpdateTexture = 0;
 
-		//true when decoupler has no grandparent in the editor
+		//true when decoupler has no grandparent in the editor and automatic size detection is active
+		[KSPField(isPersistant = true)]
 		public bool invisibleShroud;
 
 		//Variables for detecting wheter automatic size needs to be recalculated
@@ -124,10 +122,11 @@ namespace DecouplerShroud {
 		Part lastShroudAttachedPart;
 		Part lastShroudedPart = null;
 
-		DragCubeList starDragCubes;
+		DragCubeList stockDragCubes;
 
 		public void setup() {
-
+			//Debug.Log("[Decoupler Shroud] jet: " + jettisoned + ", attached: " + part.isAttached + ", inv: "+invisibleShroud);
+			
 			//Get rid of decoupler shroud module if no top node found
 			if (destroyShroudIfNoTopNode()) {
 				return;
@@ -138,7 +137,7 @@ namespace DecouplerShroud {
 			collPerSegment = collPerSegmentLUT[segmentIndex];
 			//Debug.Log("!!set segment count to: " + segments + ", Index: " + segmentIndex);
 
-			starDragCubes = part.DragCubes;
+			stockDragCubes = part.DragCubes;
 			getTextureNames();
 			//Remove copied decoupler shroud when copied
 			Transform copiedDecouplerShroud = transform.Find("DecouplerShroud");
@@ -160,7 +159,7 @@ namespace DecouplerShroud {
 			Fields[nameof(height)].OnValueModified += updateShroud;
 			Fields[nameof(thickness)].OnValueModified += updateShroud;
 			Fields[nameof(vertOffset)].OnValueModified += updateShroud;
-			Fields[nameof(textureIndex)].OnValueModified += updateTexture;
+			Fields[nameof(textureIndex)].OnValueModified += changeMaterial;
 
 			Fields[nameof(segmentIndex)].OnValueModified += segmentUpdate;
 			Fields[nameof(collisionEnabled)].OnValueModified += segmentUpdate;
@@ -168,20 +167,12 @@ namespace DecouplerShroud {
 			setButtonActive();
 
 			if (HighLogic.LoadedSceneIsFlight) {
-				if (part.isAttached) {
-					createNewShroudGO();
-					if (GetShroudedPart() != null && shroudEnabled) {
-						GetShroudedPart().AddShield(this);
-					}
-				}
-			} else {
-				if (part.isAttached) {
-					createNewShroudGO();
+				if (GetShroudedPart() != null && shroudEnabled) {
+					GetShroudedPart().AddShield(this);
 				}
 			}
-
+			createNewShroudGO();
 			//detectSize();
-
 			setupFinished = true;
 		}
 
@@ -285,7 +276,7 @@ namespace DecouplerShroud {
 		//Jettisons the shroud
 		[KSPEvent(guiName = "Jettison", guiActive = true, guiActiveEditor = false)]
 		public void Jettison() {
-			Debug.Log("Jettison called on DecouplerShroud of "+part.name);
+			//Debug.Log("Jettison called on DecouplerShroud of "+part.name);
 
 			if (segments < 2 || !HighLogic.LoadedSceneIsFlight) {
 				return;
@@ -304,7 +295,7 @@ namespace DecouplerShroud {
 				physicalObject ph = c.AddComponent<physicalObject>();
 				ph.rb = c.AddComponent<Rigidbody>();
 
-				float ang = -Mathf.PI / 2 + 2 * Mathf.PI * (i+.5f) / (float)segments;
+				float ang = 2 * Mathf.PI * (i+.5f) / (float)segments;
 				ph.rb.AddRelativeForce(new Vector3(Mathf.Cos(ang),0,Mathf.Sin(ang)) * jettisonVelocity, ForceMode.VelocityChange);
 			}
 			shroudGO.transform.DetachChildren();
@@ -322,7 +313,7 @@ namespace DecouplerShroud {
 
 			string[] options = new string[ShroudTexture.shroudTextures.Count];
 			for (int i = 0; i < options.Length; i++) {
-				options[i] = ShroudTexture.shroudTextures[i].name;
+				options[i] = ShroudTexture.shroudTextures[i].displayName;
 
 				//Sets textureindex to the saved texture
 				if (options[i].Equals(textureName)) {
@@ -378,6 +369,9 @@ namespace DecouplerShroud {
 		void setButtonActive(object arg) { setButtonActive(); }
 		void setButtonActive() {
 
+            if (!HighLogic.LoadedSceneIsEditor)
+                return;
+
 			if (shroudEnabled) {
 				Fields[nameof(autoDetectSize)].guiActiveEditor = true;
 				Fields[nameof(segmentIndex)].guiActiveEditor = true;
@@ -410,27 +404,76 @@ namespace DecouplerShroud {
 			//Debug.Log("set jettison gui to: "+ (!jettisoned && shroudEnabled && (segments > 1)) +", "+jettisoned+", "+shroudEnabled+", "+(segments>1)+", "+segments);
 		}
 
-		void updateTexture(object arg) { updateTexture(); }
-		void updateTexture() {
-			
+		void changeMaterial(object arg) { changeMaterial(); }
+		void changeMaterial() {
 			ShroudTexture shroudTex = ShroudTexture.shroudTextures[textureIndex];
 
 			//save current textures name
 			textureName = shroudTex.name;
+			CreateMaterials(shroudTex);
+
+			updateTextureScale();
+		}
+
+		void updateTextureScale() {
+			if (shroudMats == null) {
+				changeMaterial();
+				return;
+			}
+			if (shroudMats[0] == null) {
+				Debug.LogWarning("called updateTExtureScale while shroudMats[0] == null");
+				changeMaterial();
+				return;
+			}
+
+			ShroudTexture shroudTex = ShroudTexture.shroudTextures[textureIndex];
 
 			Vector2 sideSize = new Vector2(Mathf.Max(botWidth,topWidth), new Vector2(height,topWidth-botWidth).magnitude);
 			Vector2 topSize = new Vector2(topWidth, topWidth * thickness);
 
-			shroudTex.textures[0].SetMaterialProperties(shroudMats[0], sideSize);
-			shroudTex.textures[1].SetMaterialProperties(shroudMats[1], topSize);
-			shroudTex.textures[2].SetMaterialProperties(shroudMats[2], sideSize);
+			shroudTex.textures[0].SetTextureScale(shroudMats[0], sideSize);
+			shroudTex.textures[1].SetTextureScale(shroudMats[1], topSize);
+			shroudTex.textures[2].SetTextureScale(shroudMats[2], sideSize);
 
 			if (shroudGO == null) {
 				return;
 			}
 			foreach (Renderer r in shroudGO.GetComponentsInChildren<Renderer>()) {
-				r.materials = shroudMats;
+				if (r.materials != shroudMats) {
+					foreach (Material mat in r.materials) {
+						if (mat != null)
+							Destroy(mat);
+					}
+					r.materials = shroudMats;
+				}
 			}
+		}
+
+		//Creates the material for the mesh
+		void CreateMaterials(ShroudTexture shroudTex) {
+			//Clean up old materials
+			if (shroudMats != null) {
+				foreach (Material mat in shroudMats) {
+					if (mat != null) {
+						Destroy(mat);
+					}
+				}
+			}
+			shroudMats = new Material[3];
+
+			for (int i = 0; i < shroudMats.Length; i++) {
+
+				SurfaceTexture surf = shroudTex.textures[i];
+
+				shroudMats[i] = Instantiate(surf.mat);
+				shroudMats[i].name = "shroudMat: " + i + ", " + segments + " segments";
+
+				if (HighLogic.LoadedSceneIsEditor) {
+					// Enables transparency in editor
+					shroudMats[i].renderQueue = 3000;
+				}
+			}
+
 		}
 
 		void partReattached() {
@@ -444,12 +487,14 @@ namespace DecouplerShroud {
 		void detectSize(object arg) { detectSize(); }
 		void detectSize() {
 
-			
+			if(!HighLogic.LoadedSceneIsEditor){
+				return;
+			}
+
 			invisibleShroud = false;
 			
-
 			//Check if the size has to be reset
-			if (!autoDetectSize || !HighLogic.LoadedSceneIsEditor || !part.isAttached || !shroudEnabled) {
+			if (!autoDetectSize || !part.isAttached || !shroudEnabled) {
 				return;
 			}
 
@@ -468,7 +513,7 @@ namespace DecouplerShroud {
 					if (part.collider is MeshCollider) {
 						mc = (MeshCollider)part.collider;
 					} else {
-						Debug.Log("part collider is " + part.collider.GetType().ToString());
+						Debug.LogWarning("DecouplerShroud: part collider is " + part.collider.GetType().ToString());
 					}
 
 					if (mc != null) {
@@ -511,7 +556,7 @@ namespace DecouplerShroud {
 					if (shroudAttatchedPart.collider is MeshCollider) {
 						mc = (MeshCollider)shroudAttatchedPart.collider;
 					} else {
-						Debug.Log("attached collider is "+ shroudAttatchedPart.collider.GetType().ToString());
+						//Debug.LogWarning("[DecouplerShroud] attached collider is "+ shroudAttatchedPart.collider.GetType().ToString());
 					}
 
 					if (mc != null) {
@@ -572,7 +617,7 @@ namespace DecouplerShroud {
 				invisibleShroud = true;
 				topWidth = botWidth;
 			}
-			
+
 			//Update shroud mesh
 			if (shroudGO != null) {
 				updateShroud();
@@ -635,12 +680,15 @@ namespace DecouplerShroud {
 			return size;
 		}
 
+		//If decoupler is detached from engine, remove shroud and reenable stock shrouds
 		void partDetached() {
-			destroyShroud();
-			if (engineShrouds != null) {
-				if (engineShrouds.Length > 0) {
-					foreach (ModuleJettison engineShroud in engineShrouds) {
-						engineShroud.shroudHideOverride = turnedOffEngineShroud;
+			if (GetShroudedPart() == null) {
+				destroyShroud();
+				if (engineShrouds != null) {
+					if (engineShrouds.Length > 0) {
+						foreach (ModuleJettison engineShroud in engineShrouds) {
+							engineShroud.shroudHideOverride = turnedOffEngineShroud;
+						}
 					}
 				}
 			}
@@ -680,9 +728,11 @@ namespace DecouplerShroud {
 			if (shroudGO == null || shroudShaper == null) {
 				createNewShroudGO();
 			}
-			updateTexture();
+
+			updateTextureScale();
+
 			shroudShaper.update();
-			shroudGO.SetActive(!invisibleShroud);
+
 			updateCollisionSizeFactor();
 
 			//Update collision meshes
@@ -692,10 +742,25 @@ namespace DecouplerShroud {
 					mc.sharedMesh = shroudShaper.collCylinder.meshes[index];
 				}
 			}
-		}
+
+			if (shroudGO != null) {
+				shroudGO.SetActive(!invisibleShroud);
+			}
+
+            if (isFarInstalled())
+            {
+                part.SendMessage("GeometryPartModuleRebuildMeshData");
+            }
+        }
 
 		//Recalculates the drag cubes for the model
 		void generateDragCube() {
+
+
+			if (isFarInstalled()) {
+				Debug.Log("[Debug] Updating FAR Voxels");
+				part.SendMessage("GeometryPartModuleRebuildMeshData");
+			}
 
 			if (shroudEnabled && HighLogic.LoadedSceneIsFlight) {
 				//Calculate dragcube for the cone manually
@@ -703,12 +768,16 @@ namespace DecouplerShroud {
 				part.DragCubes.ClearCubes();
 				part.DragCubes.Cubes.Add(dc);
 				part.DragCubes.ResetCubeWeights();
+				part.DragCubes.ForceUpdate(true,true,false);
 
 			}
 		}
 
 		//Create the gameObject with the meshrenderer
 		void createNewShroudGO() {
+
+            //Debug.Log("[Debug] createNewShroudGO called, shroudEnabled: "+shroudEnabled+", jettisoned: "+jettisoned);
+
 			if (!shroudEnabled || jettisoned) {
 				return;
 			}
@@ -761,31 +830,15 @@ namespace DecouplerShroud {
 				}
 			}
 			//Setup materials
-			CreateMaterials();
-			updateTexture();
+			changeMaterial();
 
 			Fix_SegmentChangedCallUpdateTexture = 5;
 
 			generateDragCube();
+
+			shroudGO.SetActive(!invisibleShroud);
 		}
 
-		//Creates the material for the mesh
-		void CreateMaterials() {
-			shroudMats = new Material[3];
-			Shader s = Shader.Find("KSP/Bumped Specular (Mapped)");
-			
-
-			for (int i = 0; i < shroudMats.Length; i++) {
-
-				shroudMats[i] = new Material(s);
-				shroudMats[i].name = "shroudMat: " + i + ", " + segments + " segments";
-
-				if (HighLogic.LoadedSceneIsEditor) {
-					shroudMats[i].renderQueue = 3000;
-				}
-			}
-
-		}
 
 		void UpdateMaterialsOpacity() {
 			if (!HighLogic.LoadedSceneIsEditor || shroudMats == null) {
@@ -794,7 +847,7 @@ namespace DecouplerShroud {
 
 			//Ugly Fix
 			if (--Fix_SegmentChangedCallUpdateTexture > 0) {
-				updateTexture();
+				updateTextureScale();
 			}
 
 			float alpha = distPointRay(transform.TransformPoint((vertOffset + height) / 2f * Vector3.up),Camera.main.ScreenPointToRay(Input.mousePosition)) / (botWidth + topWidth + height) * 2;
@@ -913,5 +966,31 @@ namespace DecouplerShroud {
 		public Part GetPart() {
 			return part;
 		}
+
+		public static bool FARinstalled, FARchecked;
+		public static bool isFarInstalled() {
+            
+            // FAR support doesn't work yet, so let's just pretend it is not installed
+            return false; 
+            
+			if (!FARchecked) {
+				var asmlist = AssemblyLoader.loadedAssemblies;
+
+				if (asmlist != null) {
+					for (int i = 0; i < asmlist.Count; i++) {
+						if (asmlist[i].name == "FerramAerospaceResearch") {
+							FARinstalled = true;
+
+							break;
+						}
+					}
+				}
+				Debug.Log("[Debug] Far installed: "+FARinstalled);
+				FARchecked = true;
+			}
+
+			return FARinstalled;
+		}
+
 	}
 }
