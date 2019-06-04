@@ -971,7 +971,7 @@ namespace DecouplerShroud
 		public static bool isFarInstalled() {
             
             // FAR support doesn't work yet, so let's just pretend it is not installed
-            return false; 
+            //return false; 
             
 			if (!FARchecked) {
 				var asmlist = AssemblyLoader.loadedAssemblies;
