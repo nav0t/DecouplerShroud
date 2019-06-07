@@ -8,6 +8,7 @@ namespace DecouplerShroud
 		float[] snapSizes = new float[] { .63f , 1.25f, 2.5f, 3.75f, 5f, 7.5f};
 		int[] segmentCountLUT =   new int[] { 1, 2, 3, 4, 6 };
 		int[] collPerSegmentLUT = new int[] { 12, 6, 4, 3, 2};
+		public static string DECOUPLERSHROUD_GO_NAME = "DecouplerShroud";
 
 		[KSPField(isPersistant = true)]
 		public int nSides = 24;
@@ -109,8 +110,6 @@ namespace DecouplerShroud
 		Part lastShroudAttachedPart;
 		Part lastShroudedPart = null;
 
-		DragCubeList stockDragCubes;
-
 		public void setup() {
 			//Debug.Log("[Decoupler Shroud] jet: " + jettisoned + ", attached: " + part.isAttached + ", inv: "+invisibleShroud);
 			
@@ -124,10 +123,9 @@ namespace DecouplerShroud
 			collPerSegment = collPerSegmentLUT[segmentIndex];
 			//Debug.Log("!!set segment count to: " + segments + ", Index: " + segmentIndex);
 
-			stockDragCubes = part.DragCubes;
 			getTextureNames();
 			//Remove copied decoupler shroud when copied
-			Transform copiedDecouplerShroud = transform.Find("DecouplerShroud");
+			Transform copiedDecouplerShroud = part.FindModelComponent<Transform>().Find(DECOUPLERSHROUD_GO_NAME);
 			if (copiedDecouplerShroud != null) {
 				Destroy(copiedDecouplerShroud.gameObject);
 				shroudShaper = null;
@@ -390,7 +388,7 @@ namespace DecouplerShroud
 				return;
 			}
 			if (shroudMats[0] == null) {
-				Debug.LogWarning("called updateTExtureScale while shroudMats[0] == null");
+				Debug.LogWarning("called updateTextureScale while shroudMats[0] == null");
 				changeMaterial();
 				return;
 			}
@@ -704,7 +702,8 @@ namespace DecouplerShroud
 
             if (isFarInstalled())
             {
-                part.SendMessage("GeometryPartModuleRebuildMeshData");
+				//Debug.Log("[Debug] Updating FAR Voxels");
+				part.SendMessage("GeometryPartModuleRebuildMeshData");
             }
         }
 
@@ -713,7 +712,7 @@ namespace DecouplerShroud
 
 
 			if (isFarInstalled()) {
-				Debug.Log("[Debug] Updating FAR Voxels");
+				//Debug.Log("[Debug] Updating FAR Voxels");
 				part.SendMessage("GeometryPartModuleRebuildMeshData");
 			}
 
@@ -745,8 +744,8 @@ namespace DecouplerShroud
 				Destroy(shroudGO);
 			}
 
-			shroudGO = new GameObject("DecouplerShroud");
-			shroudGO.transform.parent = transform;
+			shroudGO = new GameObject(DECOUPLERSHROUD_GO_NAME);
+			shroudGO.transform.parent = part.FindModelComponent<Transform>();
 			shroudGO.transform.localPosition = topNode.position;
 			shroudGO.transform.localRotation = Quaternion.identity;
 
@@ -906,9 +905,6 @@ namespace DecouplerShroud
 		public static bool FARinstalled, FARchecked;
 		public static bool isFarInstalled() {
             
-            // FAR support doesn't work yet, so let's just pretend it is not installed
-            return false; 
-            
 			if (!FARchecked) {
 				var asmlist = AssemblyLoader.loadedAssemblies;
 
@@ -921,7 +917,7 @@ namespace DecouplerShroud
 						}
 					}
 				}
-				Debug.Log("[Debug] Far installed: "+FARinstalled);
+				//Debug.Log("[Debug] Far installed: "+FARinstalled);
 				FARchecked = true;
 			}
 

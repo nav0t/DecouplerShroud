@@ -40,12 +40,19 @@ namespace DecouplerShroud {
 
 		public void setScale(object arg) { setScale(); }
 		public void setScale() {
-			part.transform.FindChild("model").localScale = Vector3.one * diameter / modelSize;
+			foreach (Transform child in part.FindModelComponent<Transform>()) {
+				if (!child.name.Equals(ModuleDecouplerShroud.DECOUPLERSHROUD_GO_NAME)) {
+					child.localScale = Vector3.one * diameter / modelSize;
+				}
+			}
+
+			//Might be required to not mess up saves when going forward from the version where the "model" GO was scaled
+			part.FindModelComponent<Transform>().localScale = Vector3.one;
+
 			partMass = Mathf.Round(1000*diameter * diameter * massPerMeterSquared)/1000;
 			partCost = Mathf.Round(costPerMeter * diameter + baseCost);
 			if (GetComponent<ModuleDecouple>() != null) {
 				GetComponent<ModuleDecouple>().ejectionForce = diameter * ejectionForcePerMeter;
-
 			}
 		}
 
