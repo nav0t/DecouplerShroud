@@ -20,11 +20,11 @@ namespace DecouplerShroud
 		public bool autoDetectSize = true;
 
 		[KSPField(guiName = "Top", isPersistant = true, guiActiveEditor = true, guiActive = false)]
-		[UI_FloatEdit(scene = UI_Scene.Editor, minValue = .01f, maxValue = 20f, incrementLarge = .625f, incrementSlide =  0.01f, incrementSmall = 0.05f, unit = "m", sigFigs = 2, useSI = false)]
+		[UI_FloatEdit(scene = UI_Scene.Editor, minValue = .01f, maxValue = Mathf.Infinity, incrementLarge = .625f, incrementSlide =  0.01f, incrementSmall = 0.05f, unit = "m", sigFigs = 2, useSI = false)]
 		public float topWidth = 1.25f;
 
 		[KSPField(guiName = "Bottom", isPersistant = true, guiActiveEditor = true, guiActive = false)]
-		[UI_FloatEdit(scene = UI_Scene.Editor, minValue = .01f, maxValue = 20f, incrementLarge = .625f, incrementSlide = 0.01f, incrementSmall = 0.05f, unit = "m", sigFigs = 2, useSI = false)]
+		[UI_FloatEdit(scene = UI_Scene.Editor, minValue = .01f, maxValue = Mathf.Infinity, incrementLarge = .625f, incrementSlide = 0.01f, incrementSmall = 0.05f, unit = "m", sigFigs = 2, useSI = false)]
 		public float botWidth = 1.25f;
 
 		[KSPField(guiName = "Thickness", isPersistant = true, guiActiveEditor = true, guiActive = false)]
@@ -32,11 +32,11 @@ namespace DecouplerShroud
 		public float thickness = .1f;
 
 		[KSPField(guiName = "Height", isPersistant = true, guiActiveEditor = true, guiActive = false)]
-		[UI_FloatEdit(scene = UI_Scene.Editor, minValue = .01f, maxValue = 20f, incrementLarge = 0.25f, incrementSlide = 0.01f, incrementSmall = 0.02f, unit = "m", sigFigs = 2, useSI = false)]
+		[UI_FloatEdit(scene = UI_Scene.Editor, minValue = .01f, maxValue = Mathf.Infinity, incrementLarge = 0.25f, incrementSlide = 0.01f, incrementSmall = 0.02f, unit = "m", sigFigs = 2, useSI = false)]
 		public float height = 1.25f;
 
 		[KSPField(guiName = "Vertical Offset", isPersistant = true, guiActiveEditor = true, guiActive = false)]
-		[UI_FloatEdit(scene = UI_Scene.Editor, minValue = -2f, maxValue = 2f, incrementLarge = .1f, incrementSlide = 0.01f, incrementSmall = 0.01f, unit = "m", sigFigs = 2, useSI = false)]
+		[UI_FloatEdit(scene = UI_Scene.Editor, minValue = -Mathf.Infinity, maxValue = Mathf.Infinity, incrementLarge = .1f, incrementSlide = 0.01f, incrementSmall = 0.01f, unit = "m", sigFigs = 2, useSI = false)]
 		public float vertOffset = 0.0f;
 
 		[KSPField(guiName = "Jettison Mode", isPersistant = true, guiActiveEditor = true, guiActive = false)]
@@ -147,7 +147,6 @@ namespace DecouplerShroud
 			Fields[nameof(textureIndex)].OnValueModified += changeMaterial;
 
 			Fields[nameof(segmentIndex)].OnValueModified += segmentUpdate;
-
 
 			setButtonActive();
 
